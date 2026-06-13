@@ -1,0 +1,39 @@
+## Build
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+dist/
+publish/
+AppPackages/
+BundleArtifacts/
+*.msix
+*.msixupload
+
+## IDE
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+_ReSharper*/
+*.DotSettings.user
+
+## Logs / test
+[Ll]og/
+[Ll]ogs/
+*.log
+*.binlog
+[Tt]est[Rr]esult*/
+*.trx
+
+## NuGet
+*.nupkg
+*.snupkg
+project.lock.json
+
+## Runtime / local
+saves/
+*.pfx

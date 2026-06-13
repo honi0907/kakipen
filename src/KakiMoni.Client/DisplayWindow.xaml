@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Window
+    x:Class="KakiMoni_Client.DisplayWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid x:Name="RootHost" Background="#0d1b2a">
+        <Viewbox x:Name="MirrorHost"
+                 HorizontalAlignment="Stretch"
+                 VerticalAlignment="Stretch"
+                 Stretch="UniformToFill"
+                 Visibility="Collapsed"
+                 IsHitTestVisible="False">
+            <Image x:Name="MirrorImage"
+                   Stretch="Fill"
+                   Width="1920"
+                   Height="1080" />
+        </Viewbox>
+
+        <!-- DisplayPage と同様: ロゴは ImageBrush で全面に敷く -->
+        <Border x:Name="CoverPanel"
+                Background="#0d1b2a"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                Visibility="Visible"
+                IsHitTestVisible="False" />
+    </Grid>
+</Window>

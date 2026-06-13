@@ -1,0 +1,34 @@
+---
+description: WinUI 第2ウィンドウのフルスクリーン・ボーダーレス（DWM白枠対策）
+globs: "**/*Window*.xaml,**/*Window*.xaml.cs,**/MonitorHelper.cs,**/ClientWindowLayout.cs,**/DisplayOutput*.cs"
+alwaysApply: false
+---
+
+# WinUI 第2ウィンドウ・フルスクリーン
+
+## フルスクリーン ON
+
+**`MoveAndResize` / `OverlappedPresenter` と Win32 `WS_POPUP` を同時に使わない。**
+
+```
+1. フルスクリーン時 … タイトルバー折りたたみ等のみ（Presenter 枠消しは避ける）
+2. AppWindow.Show()
+3. Win32 のみ … ApplyWin32Borderless(WS_POPUP) + SetWindowPos（全面）
+4. ExpandBounds(+2px) で DWM 枠を画面外へ（任意）
+```
+
+フルスクリーン OFF … `MoveAndResize` → 最後に Win32 仕上げで可。
+
+## 禁止
+
+- フルスクリーン時の `AppWindow.MoveAndResize`
+- Win32 適用後の `MoveAndResize` ループ
+- `DwmExtendFrameIntoClientArea` + 不透明背景
+- コンテンツ Scale で OS 枠を隠す（効かない）
+
+## ロゴ / ミラー
+
+- cover: `Border` + `ImageBrush` UniformToFill
+- ミラー clear: Transparent
+
+詳細: cursor-playbook `docs/WINUI_SECOND_WINDOW.md`

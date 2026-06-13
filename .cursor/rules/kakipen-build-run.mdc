@@ -1,0 +1,44 @@
+---
+description: KakiMoni のビルド・実行・デバッグ手順
+alwaysApply: true
+---
+
+# ビルド & 実行
+
+**Host/Client 単体ビルドは x64**: `-p:Platform=x64`  
+**ソリューション全体**は `dotnet build KakiMoni.WinUI.sln -c Debug`（Any CPU → WinUI は x64 にマップ）
+
+```powershell
+# 推奨: Agent 用スクリプト
+.cursor/skills/kakipen-winui/scripts/BuildAndRun.ps1 -Target Host -Run
+.cursor/skills/kakipen-winui/scripts/BuildAndRun.ps1 -Target Client -Run
+```
+
+exe パス例: `src/KakiMoni.Host/bin/x64/Debug/net8.0-windows10.0.26100.0/win-x64/KakiMoni.Host.exe`
+
+## 起動順
+
+1. **親機** → 「サーバー起動」→「コンパネを開く」（既定 `http://localhost:3000`）
+2. **子機** → URL・席 ID・背景 →「接続してスタート」
+
+ルートの `起動_親機.bat` / `起動_子機.bat` は Debug exe を直接起動（ビルド済み前提）。
+
+## よくある問題
+
+### exe ロックでビルドできない（Agent 必須手順）
+
+Host/Client を **ビルドする前**、または MSB3021/MSB3027（ファイルが使用中）で失敗したら、**Agent は必ず** 実行中プロセスを止めてから再ビルドする。ユーザーに「終了してください」とだけ返さない。
+
+```powershell
+taskkill /IM KakiMoni.Host.exe /F 2>$null
+taskkill /IM KakiMoni.Client.exe /F 2>$null
+# または
+Stop-Process -Name KakiMoni.Host,KakiMoni.Client -Force -ErrorAction SilentlyContinue
+```
+
+手順: **終了 → dotnet build → 失敗ならもう一度終了してリトライ（最大1回）**
+
+- **Hub/API 変更が反映されない**: Host 再起動（in-process サーバー）
+- **Publish**: `.\scripts\publish-apps.ps1` → `dist/Host`, `dist/Client`, `dist/assets`
+
+Windows App SDK **2.1.3**、`EnableWinAppRunSupport` は false。`winapp run` ではなく dotnet build + exe 起動。

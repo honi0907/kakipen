@@ -1,0 +1,42 @@
+---
+description: KakiMoni (kakipen) ソリューション構成と SignalR の要点
+alwaysApply: true
+---
+
+# KakiMoni アーキテクチャ
+
+WinUI 3 + .NET 8。`kakimoni-all` は参照のみ（変更しない）。
+
+| プロジェクト | 役割 |
+|-------------|------|
+| `KakiMoni.Core` | 共有モデル・コールバック名 |
+| `KakiMoni.Server` | Kestrel + SignalR（**親機 exe 内 in-process**） |
+| `KakiMoni.Host` | 親機ランチャー + コンパネ |
+| `KakiMoni.Client` | 子機 Setup / Writing |
+
+## 主要ファイル
+
+- Hub: `src/KakiMoni.Server/Hubs/GameHub.cs`
+- 席状態: `src/KakiMoni.Core/Models/SeatClientState.cs`（`Strokes` は **get; set;** 必須）
+- 親機 Hub: `src/KakiMoni.Host/Services/HostHubService.cs`
+- 子機 Hub: `src/KakiMoni.Client/Services/ClientHubService.cs`（`_restoredStrokes` バッファ）
+- 背景: `src/KakiMoni.Server/Services/BackgroundFileService.cs`
+- アセット根: `ContentRootResolver` → リポジトリ内 `assets/` があるディレクトリ
+
+## SignalR の注意
+
+- 状態同期は `FullState` が中心。Hub/Server 変更後は **親機（Host）再起動** が必要
+- 子機は `WritingPage.WireHub()` でイベント購読。表示前に来た `RestoreStrokes` / `BackgroundChanged` は Hub 側でバッファ→ Wire 時リプレイ
+- **子機再接続** … `kakipen-client-reconnect.mdc`（`DetachedFromDispose`・`RegisterClient`・手動ループ）
+- Node.js / WebView2 / HTML UI は使わない（外部出力も **複製ミラー** — 詳細は `kakipen-winui-native.mdc`）
+
+## 外部出力（子機）
+
+- `DisplayOutputService` + `DisplayWindow`（第2ウィンドウ）
+- サーバー `RegisterClientDisplay` は使わず、**書き画面から `PublishMirror`**
+- GO: `ClientHubService` Reveal/Hide → `SetCoverRevealed`
+
+## アセット
+
+- 背景: `assets/backgrounds/`（席 ID 自動: `BG_ID1.png` 等）
+- オーバーレイ: `assets/overlays/`、ロゴ: `assets/logo/`

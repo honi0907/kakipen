@@ -1,0 +1,47 @@
+---
+description: 子機 SignalR 再接続（ClientHubService）の確定パターンと禁止事項
+globs: src/KakiMoni.Client/Services/ClientHubService.cs,src/KakiMoni.Client/Services/ClientHubConnectionFactory.cs,src/KakiMoni.Client/Services/ClientApiService.cs,src/KakiMoni.Client/SetupPage.xaml.cs
+alwaysApply: false
+---
+
+# 子機再接続（ClientHubService）
+
+親機サーバー再起動後は **子機 → サーバー** の一方通行。親機・ランチャーが子機を探しに行く処理はない。
+
+## 確定パターン
+
+```
+切断 / サーバー停止
+  ├─ SignalR WithAutomaticReconnect → Reconnected → RegisterClient（速い経路）
+  └─ Closed → 手動ループ（/health OK なら Hub 作り直し → StartAsync → RegisterClient）
+```
+
+- `ClientHubConnectionFactory`: **`WithAutomaticReconnect()` 必須**（削除しない）
+- `Reconnected`: 必ず `RegisterClientOnServerAsync`（席登録のみではコンパネに戻らない）
+- 手動ループ: `/health` でサーバー復帰を確認してから Hub を作り直す
+- `PingHealthAsync`: `ConnectionClose` 付き（HttpClient プールのゾンビ回避）
+
+## DetachedFromDispose（最重要）
+
+`SetupPage` は書き画面遷移時に `hub.DetachedFromDispose = true` を立てる（`AppServices.Hub` 管理・ページアンロードで破棄しないため）。
+
+**このフラグを再接続ループの終了条件に使ってはならない。**  
+使うと接続直後から再接続が一切動かず、3分問題のように見える。
+
+| 用途 | OK |
+|------|-----|
+| `WritingPage.OnUnloaded` で `DisposeAsync` をスキップ | ✅ |
+| 再接続ループ・ウォッチドッグ・`ScheduleReconnectLoop` のガード | ❌ |
+
+## 複数タスクの再接続は禁止
+
+ウォッチドッグ + 再接続ループ + `Closed` がそれぞれ `Cancel` / 新ループ起動すると、登録途中で止まる。**経路は自動再接続 + 単一手動ループの二段だけ。**
+
+## 親機側の表示
+
+- ランチャー `GET /api/seats` … 接続席の確認用（子機を呼び戻せない）
+- 親機丸ごと再起動後は `ClientDisconnected` が届かないことがある → コンパネは「未接続」、子機は「再接続中」のずれがありうる
+
+## 演者向け UI
+
+子機の書き画面に再接続ボタンは置かない。親機ボタンも Hub 接続そのものは復活させられない。

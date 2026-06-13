@@ -1,0 +1,48 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{4B1E0F7E-035E-48A8-B64E-BFC95B110202}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KakiMoni.Core", "src\KakiMoni.Core\KakiMoni.Core.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KakiMoni.Server", "src\KakiMoni.Server\KakiMoni.Server.csproj", "{B2C3D4E5-F6A7-8901-BCDE-F12345678901}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KakiMoni.Host", "src\KakiMoni.Host\KakiMoni.Host.csproj", "{6B873204-E091-4232-8732-DC71364541E1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KakiMoni.Client", "src\KakiMoni.Client\KakiMoni.Client.csproj", "{B2153B21-F88A-4555-9DB4-0106723F4613}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B873204-E091-4232-8732-DC71364541E1}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{6B873204-E091-4232-8732-DC71364541E1}.Debug|Any CPU.Build.0 = Debug|x64
+		{6B873204-E091-4232-8732-DC71364541E1}.Release|Any CPU.ActiveCfg = Release|x64
+		{6B873204-E091-4232-8732-DC71364541E1}.Release|Any CPU.Build.0 = Release|x64
+		{B2153B21-F88A-4555-9DB4-0106723F4613}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{B2153B21-F88A-4555-9DB4-0106723F4613}.Debug|Any CPU.Build.0 = Debug|x64
+		{B2153B21-F88A-4555-9DB4-0106723F4613}.Release|Any CPU.ActiveCfg = Release|x64
+		{B2153B21-F88A-4555-9DB4-0106723F4613}.Release|Any CPU.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890} = {4B1E0F7E-035E-48A8-B64E-BFC95B110202}
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901} = {4B1E0F7E-035E-48A8-B64E-BFC95B110202}
+		{6B873204-E091-4232-8732-DC71364541E1} = {4B1E0F7E-035E-48A8-B64E-BFC95B110202}
+		{B2153B21-F88A-4555-9DB4-0106723F4613} = {4B1E0F7E-035E-48A8-B64E-BFC95B110202}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "KakiMoni.Client (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "KakiMoni.Client (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

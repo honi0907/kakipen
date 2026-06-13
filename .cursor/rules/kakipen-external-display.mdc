@@ -1,0 +1,19 @@
+---
+description: 子機外部出力ウィンドウの配置・ボーダーレス（フルスクリーン白縁対策の確定パターン）
+globs: src/KakiMoni.Client/DisplayWindow.*,src/KakiMoni.Client/Services/DisplayOutputService.cs,src/KakiMoni.Client/Services/MonitorHelper.cs,src/KakiMoni.Client/Services/ClientWindowLayout.cs
+alwaysApply: false
+---
+
+# 外部出力ウィンドウ（DisplayWindow）
+
+## フルスクリーン ON（確定パターン）
+
+**WinUI の `MoveAndResize` / `OverlappedPresenter` と Win32 `WS_POPUP` を同時に使わない。**
+
+汎用の背景・禁止事項は `playbook-winui-second-window-borderless.mdc` を参照。
+
+## 主要ファイル
+
+- `DisplayWindow.xaml` / `.xaml.cs` … `ShowOnDisplay`
+- `MonitorHelper.cs` … `ApplyWin32Borderless`, `ApplyWin32BorderlessAndBounds`, `ExpandBounds`
+- `ClientWindowLayout.cs` … `MoveToSecondaryMonitor`（WinUI のみ）, `PrepareDisplayWin32FullscreenChrome`

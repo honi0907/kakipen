@@ -1,0 +1,28 @@
+---
+description: KakiMoni WinUI 3 UI/XAML の作業指針（Microsoft winui スキル連携）
+globs: src/KakiMoni.Host/**/*.{xaml,cs},src/KakiMoni.Client/**/*.{xaml,cs}
+alwaysApply: false
+---
+
+# WinUI UI 作業
+
+UI / XAML / ページ変更時は **`kakipen-winui` スキル** を読み、必要に応じて Microsoft 公式スキルも使う:
+
+- `winui-design` — Fluent、コントロール選定、テーマ
+- `winui-dev-workflow` — 一般 WinUI ビルド知識（実行は kakipen 用 `BuildAndRun.ps1` を優先）
+- `winui-code-review` / `winui-ui-testing` — レビュー・テスト時
+
+## このプロジェクトの UI パターン
+
+- **描画**: Win2D `CanvasControl`（`WritingPage`, コンパネプレビュー）。InkCanvas ではない
+- **親機**: `CompanelPage` + `SeatCardView`（10 席 `ItemsRepeater`）
+- **子機**: `SetupPage` → `WritingPage`（Frame ナビゲーション）
+- **Hub 連携 UI**: 接続ランプ（Ellipse）、ロック ToggleButton、切断検知表示
+- **命名空間**: `KakiMoni_Host` / `KakiMoni_Client`（アンダースコア区切り）
+
+## 変更時の制約
+
+- SignalR イベント名・`SeatClientState` の JSON 互換を壊さない
+- 新規インタラクティブコントロールには `AutomationProperties.AutomationId` を付与（winui 推奨）
+- 背景・ストローク同期ロジックを UI リファクタで accidentally 削除しない
+- **外部出力**: `DisplayWindow` + `DisplayOutputService.PublishMirror`（`CanvasImageSource` → `Image`）。Win2D 再実装・WebView2 禁止 — `kakipen-winui-native.mdc` 参照

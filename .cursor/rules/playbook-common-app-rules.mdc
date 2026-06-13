@@ -1,0 +1,15 @@
+---
+description: 共通 build / version / release 運用（完了報告前に build 実行など）
+alwaysApply: true
+---
+
+# Common App Rules
+
+- 変更作業は **完了報告前に対象アプリの build を実行**する
+- build 後は成果物名と出力先を確認する
+- version はリリースのたびに上げる。同じ tag の再利用はしない
+- `X.Y.9` の次は `X.(Y+1).0` に繰り上げる
+- 生成物フォルダに古い成果物を残さない
+- 運用ルール変更時は `BUILD_RULES.md` 等も同時更新
+
+詳細: cursor-playbook `docs/COMMON_APP_RULES.md`

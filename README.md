@@ -1,0 +1,56 @@
+# KakiMoni WinUI 3 — フルスタック再構築版
+
+Experimental WinUI 3 implementation. `kakimoni-all` is reference only (not modified).
+
+## Architecture
+
+| Project | Role |
+|---------|------|
+| `KakiMoni.Core` | Shared models & protocol |
+| `KakiMoni.Server` | ASP.NET Core + SignalR (in-process) |
+| `KakiMoni.Host` | 親機ランチャー + WinUI コンパネ |
+| `KakiMoni.Client` | 子機 (Setup + Writing) |
+
+**Node.js / WebView2 / HTML UI は不要** — サーバーは親機 exe 内の Kestrel で起動。
+
+## Quick start (Debug)
+
+```powershell
+# 親機
+cd C:\Users\k-mizukami\Desktop\kakipen\src\KakiMoni.Host
+dotnet build -c Debug -p:Platform=x64
+.\bin\x64\Debug\net8.0-windows10.0.26100.0\win-x64\KakiMoni.Host.exe
+```
+
+1. 「サーバー起動」をクリック
+2. 「コンパネを開く」で 10 席モニター
+
+```powershell
+# 子機
+cd C:\Users\k-mizukami\Desktop\kakipen\src\KakiMoni.Client
+dotnet build -c Debug -p:Platform=x64
+.\bin\x64\Debug\net8.0-windows10.0.26100.0\win-x64\KakiMoni.Client.exe
+```
+
+1. `http://localhost:3000`、席 ID、背景を選択
+2. 「接続してスタート」→ 描画
+
+## Assets
+
+背景画像: `assets/backgrounds/`  
+選択肢画像: `assets/choices/`（コンパネのドロップダウンで選択 → **選択肢送信**）  
+オーバーレイ: `assets/overlays/`  
+ロゴ: `assets/logo/`
+
+## Publish
+
+```powershell
+cd C:\Users\k-mizukami\Desktop\kakipen
+.\scripts\publish-apps.ps1
+```
+
+## Notes
+
+- Debug exe で動作確認（`dist/` は publish 後）
+- `[Startup]` ログで起動時間を Output ウィンドウで確認
+- TIFF 背景は子機 WinUI のみ対応

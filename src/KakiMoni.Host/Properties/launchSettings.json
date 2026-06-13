@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "KakiMoni.Host (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "KakiMoni.Host (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

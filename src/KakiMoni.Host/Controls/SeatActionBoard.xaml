@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="KakiMoni_Host.Controls.SeatActionBoard"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="BoardBgBrush" Color="#151b28" />
+        <SolidColorBrush x:Key="PanelBorderBrush" Color="#4b5563" />
+        <SolidColorBrush x:Key="PanelLabelBrush" Color="#94a3b8" />
+        <SolidColorBrush x:Key="SepBrush" Color="#6b7280" />
+
+        <Style x:Key="SideActionButtonStyle" TargetType="Button" BasedOn="{StaticResource SeatChromeButtonStyle}">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+    </UserControl.Resources>
+
+    <Border Background="{StaticResource BoardBgBrush}" Padding="8,6,10,6">
+        <Grid x:Name="RootGrid" ColumnSpacing="8" RowSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- 選択 -->
+            <Border Grid.Row="0" Grid.Column="0"
+                    BorderBrush="{StaticResource PanelBorderBrush}"
+                    BorderThickness="2"
+                    Padding="6"
+                    CornerRadius="4">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="選択" Foreground="{StaticResource PanelLabelBrush}" FontSize="12" FontWeight="SemiBold" />
+                    <Grid ColumnSpacing="6" VerticalAlignment="Top">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid x:Name="SelectButtonGrid" VerticalAlignment="Top" />
+                        <StackPanel Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    Spacing="6"
+                                    VerticalAlignment="Top">
+                            <Border x:Name="SelectSep"
+                                    Width="2"
+                                    Background="{StaticResource SepBrush}" />
+                            <Button x:Name="SelectAllToggleButton"
+                                    Content="全選択"
+                                    Style="{StaticResource SideActionButtonStyle}"
+                                    Click="OnSelectAllToggleClick" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- ロック -->
+            <Border Grid.Row="0" Grid.Column="1"
+                    BorderBrush="{StaticResource PanelBorderBrush}"
+                    BorderThickness="2"
+                    Padding="6"
+                    CornerRadius="4">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="ロック" Foreground="{StaticResource PanelLabelBrush}" FontSize="12" FontWeight="SemiBold" />
+                    <Grid ColumnSpacing="6" VerticalAlignment="Top">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid x:Name="LockButtonGrid" VerticalAlignment="Top" />
+                        <StackPanel Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    Spacing="6"
+                                    VerticalAlignment="Top">
+                            <Border x:Name="LockSep"
+                                    Width="2"
+                                    Background="{StaticResource SepBrush}" />
+                            <Button x:Name="LockAllButton"
+                                    Content="全ロック"
+                                    Style="{StaticResource SideActionButtonStyle}"
+                                    Click="OnLockAllClick" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- 正誤 -->
+            <Border Grid.Row="1" Grid.Column="0"
+                    BorderBrush="{StaticResource PanelBorderBrush}"
+                    BorderThickness="2"
+                    Padding="6"
+                    CornerRadius="4">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="正誤" Foreground="{StaticResource PanelLabelBrush}" FontSize="12" FontWeight="SemiBold" />
+                    <Grid x:Name="JudgeButtonGrid" />
+                </StackPanel>
+            </Border>
+
+            <!-- 黒隠し -->
+            <Border Grid.Row="1" Grid.Column="1"
+                    BorderBrush="{StaticResource PanelBorderBrush}"
+                    BorderThickness="2"
+                    Padding="6"
+                    CornerRadius="4">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="黒隠し" Foreground="{StaticResource PanelLabelBrush}" FontSize="12" FontWeight="SemiBold" />
+                    <Grid x:Name="BlackoutButtonGrid" />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

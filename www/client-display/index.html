@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KakiMoni 外部出力</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0d1a; }
+  #canvas-wrap {
+    position: absolute; inset: 0;
+    overflow: hidden;
+    background-color: #fff;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+  #display-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #cover {
+    position: absolute; inset: 0; z-index: 30;
+    background-color: #0d1b2a;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: none;
+    align-items: center; justify-content: center;
+  }
+  #cover-label {
+    font: bold 3rem/1.2 system-ui, sans-serif;
+    color: rgba(96,165,250,0.4);
+    letter-spacing: 0.15em;
+    user-select: none;
+  }
+  #cover-label.hidden { display: none; }
+  #choice-layer {
+    position: absolute; inset: 0; z-index: 10; display: none;
+    pointer-events: none; align-items: center; justify-content: center;
+  }
+  #choice-layer.show { display: flex; }
+  #choice-layer img { width: 100%; height: 100%; object-fit: contain; }
+  #result-overlay {
+    position: absolute; inset: 0; z-index: 40; display: none;
+    align-items: center; justify-content: center; pointer-events: none;
+  }
+  #result-overlay.show { display: flex; }
+  #result-overlay img { max-width: 70%; max-height: 70%; object-fit: contain; }
+  #status {
+    position: fixed; left: 12px; bottom: 12px; z-index: 100;
+    color: rgba(255,255,255,0.35); font: 12px/1.4 system-ui, sans-serif;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<div id="canvas-wrap">
+  <div id="choice-layer"><img id="choice-img" alt=""></div>
+  <canvas id="display-canvas"></canvas>
+  <div id="cover"><div id="cover-label">READY</div></div>
+</div>
+<div id="result-overlay"><img id="result-img" alt=""></div>
+<div id="status">接続中...</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.7/dist/browser/signalr.min.js"></script>
+<script>
+(() => {
+  const params = new URLSearchParams(location.search);
+  const seatId = parseInt(params.get('seat') || '0', 10);
+  const statusEl = document.getElementById('status');
+  const wrap = document.getElementById('canvas-wrap');
+  const canvas = document.getElementById('display-canvas');
+  const ctx = canvas.getContext('2d');
+  const cover = document.getElementById('cover');
+  const choiceLayer = document.getElementById('choice-layer');
+  const choiceImg = document.getElementById('choice-img');
+  const resultOverlay = document.getElementById('result-overlay');
+  const resultImg = document.getElementById('result-img');
+
+  let revealed = false;
+  let hasLogo = false;
+  let logoUrl = '';
+  let bgImageUrl = '';
+  let fillImageUrl = '';
+  let liveStroke = null;
+  const strokeHistory = [];
+
+  function setStatus(text) { statusEl.textContent = text; }
+
+  function resizeCanvas() {
+    const { width, height } = wrap.getBoundingClientRect();
+    const r = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.floor(width * r));
+    canvas.height = Math.max(1, Math.floor(height * r));
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    ctx.setTransform(r, 0, 0, r, 0, 0);
+    redrawAll();
+  }
+
+  function updateCanvasWrapBg() {
+    if (fillImageUrl && bgImageUrl) {
+      wrap.style.backgroundImage = `url('${fillImageUrl}'), url('${bgImageUrl}')`;
+      wrap.style.backgroundSize = '100% 100%, cover';
+    } else if (fillImageUrl) {
+      wrap.style.backgroundImage = `url('${fillImageUrl}')`;
+      wrap.style.backgroundSize = '100% 100%';
+    } else if (bgImageUrl) {
+      wrap.style.backgroundImage = `url('${bgImageUrl}')`;
+      wrap.style.backgroundSize = 'cover';
+    } else {
+      wrap.style.backgroundImage = '';
+      wrap.style.backgroundSize = '';
+    }
+  }
+
+  function setBgImage(url) {
+    const next = url || '';
+    if (next === bgImageUrl) return;
+    bgImageUrl = next;
+    updateCanvasWrapBg();
+  }
+
+  function getStrokeScale(stroke) {
+    const dw = canvas.width / (window.devicePixelRatio || 1);
+    const dh = canvas.height / (window.devicePixelRatio || 1);
+    const sx = stroke.srcW > 0 ? dw / stroke.srcW : 1;
+    const sy = stroke.srcH > 0 ? dh / stroke.srcH : 1;
+    return { sx, sy };
+  }
+
+  function drawStroke(stroke) {
+    const pts = stroke.points;
+    if (!pts || pts.length < 1) return;
+    const { sx, sy } = getStrokeScale(stroke);
+    ctx.save();
+    ctx.scale(sx, sy);
+    if (stroke.tool === 'eraser') {
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.strokeStyle = 'rgba(0,0,0,1)';
+    } else {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.strokeStyle = stroke.color || '#000';
+    }
+    ctx.lineWidth = stroke.size || 4;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) {
+      const prev = pts[i - 1];
+      const curr = pts[i];
+      ctx.quadraticCurveTo(prev.x, prev.y, (prev.x + curr.x) / 2, (prev.y + curr.y) / 2);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawStrokeSegment(stroke) {
+    const pts = stroke.points;
+    if (!pts || pts.length < 2) return;
+    const { sx, sy } = getStrokeScale(stroke);
+    ctx.save();
+    ctx.scale(sx, sy);
+    if (stroke.tool === 'eraser') {
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.strokeStyle = 'rgba(0,0,0,1)';
+    } else {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.strokeStyle = stroke.color || '#000';
+    }
+    ctx.lineWidth = stroke.size || 4;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    const prev = pts[pts.length - 2];
+    const curr = pts[pts.length - 1];
+    if (pts.length === 2) {
+      ctx.moveTo(pts[0].x, pts[0].y);
+      ctx.lineTo(pts[1].x, pts[1].y);
+    } else {
+      const pprev = pts[pts.length - 3];
+      ctx.moveTo((pprev.x + prev.x) / 2, (pprev.y + prev.y) / 2);
+      ctx.quadraticCurveTo(prev.x, prev.y, (prev.x + curr.x) / 2, (prev.y + curr.y) / 2);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function redrawAll() {
+    const w = canvas.width / (window.devicePixelRatio || 1);
+    const h = canvas.height / (window.devicePixelRatio || 1);
+    ctx.clearRect(0, 0, w, h);
+    for (const stroke of strokeHistory) drawStroke(stroke);
+    if (liveStroke) drawStroke(liveStroke);
+  }
+
+  function applyLogoToCover(url) {
+    const bgVal = `url('${url}')`;
+    cover.style.backgroundImage = bgVal;
+  }
+
+  async function loadLogo() {
+    try {
+      const data = await fetch('/api/logo').then(r => r.json());
+      if (data.url) {
+        hasLogo = true;
+        logoUrl = data.url;
+        applyLogoToCover(logoUrl);
+        document.getElementById('cover-label').classList.add('hidden');
+      }
+    } catch {}
+  }
+
+  function showCover() {
+    if (!hasLogo) {
+      cover.style.display = 'none';
+      revealed = true;
+      return;
+    }
+    cover.style.display = 'flex';
+    cover.style.opacity = '1';
+    cover.style.transform = 'none';
+    if (logoUrl) applyLogoToCover(logoUrl);
+    revealed = false;
+  }
+
+  function doReveal(animType) {
+    if (revealed) return;
+    revealed = true;
+    if (animType === 'cut' || !animType) {
+      cover.style.display = 'none';
+      return;
+    }
+    cover.style.display = 'none';
+  }
+
+  function showChoice(url) {
+    choiceImg.src = url;
+    choiceLayer.classList.add('show');
+  }
+
+  function clearChoice() {
+    choiceLayer.classList.remove('show');
+    choiceImg.src = '';
+  }
+
+  function showOverlay(imageUrl) {
+    const isFill = /fill/i.test((imageUrl || '').split('/').pop() || '');
+    if (isFill) {
+      fillImageUrl = imageUrl;
+      updateCanvasWrapBg();
+      resultOverlay.classList.remove('show');
+      resultImg.src = '';
+    } else {
+      fillImageUrl = '';
+      updateCanvasWrapBg();
+      resultImg.src = imageUrl;
+      resultOverlay.classList.add('show');
+    }
+    redrawAll();
+  }
+
+  function clearOverlay() {
+    resultOverlay.classList.remove('show');
+    resultImg.src = '';
+    fillImageUrl = '';
+    updateCanvasWrapBg();
+    redrawAll();
+  }
+
+  async function connectHub() {
+    if (!seatId || seatId < 1 || seatId > 10) {
+      setStatus('席番号が無効です (?seat=1〜10)');
+      return;
+    }
+
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl('/hub')
+      .withAutomaticReconnect()
+      .build();
+
+    connection.on('RestoreStrokes', (strokes) => {
+      strokeHistory.length = 0;
+      liveStroke = null;
+      for (const s of (strokes || [])) strokeHistory.push(s);
+      redrawAll();
+    });
+    connection.on('BackgroundChanged', (url) => setBgImage(url));
+    connection.on('StrokeStart', (stroke) => {
+      liveStroke = stroke;
+      drawStroke(stroke);
+    });
+    connection.on('StrokePoint', (point) => {
+      if (!liveStroke) return;
+      liveStroke.points.push(point);
+      drawStrokeSegment(liveStroke);
+    });
+    connection.on('StrokeEnd', () => {
+      if (liveStroke) {
+        strokeHistory.push(liveStroke);
+        liveStroke = null;
+      }
+    });
+    connection.on('ClearStrokesOnly', () => {
+      strokeHistory.length = 0;
+      liveStroke = null;
+      redrawAll();
+    });
+    connection.on('Reveal', (animType) => doReveal(animType || 'cut'));
+    connection.on('Hide', () => {
+      showCover();
+      clearOverlay();
+    });
+    connection.on('ShowChoice', (url) => {
+      if (url) showChoice(url); else clearChoice();
+    });
+    connection.on('ClearChoice', () => clearChoice());
+    connection.on('ShowOverlay', (url) => { if (url) showOverlay(url); });
+    connection.on('ClearOverlay', () => clearOverlay());
+
+    connection.onreconnecting(() => setStatus('再接続中...'));
+    connection.onreconnected(async () => {
+      setStatus('接続済み');
+      await connection.invoke('RegisterClientDisplay', seatId);
+    });
+    connection.onclose(() => setStatus('切断されました'));
+
+    await connection.start();
+    await connection.invoke('RegisterClientDisplay', seatId);
+    setStatus(`接続済み (席 ${seatId})`);
+  }
+
+  async function boot() {
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    await loadLogo();
+    if (!hasLogo) {
+      cover.style.display = 'none';
+      revealed = true;
+    }
+    try {
+      await connectHub();
+    } catch (err) {
+      setStatus('接続失敗: ' + (err && err.message ? err.message : err));
+      console.error(err);
+    }
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>

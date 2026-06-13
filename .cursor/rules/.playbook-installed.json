@@ -1,0 +1,13 @@
+﻿{
+    "layers":  [
+                   "generic",
+                   "winui"
+               ],
+    "files":  [
+                  "playbook-common-app-rules.mdc",
+                  "playbook-debug-visual-boundary.mdc",
+                  "playbook-winui-second-window-borderless.mdc"
+              ],
+    "source":  "cursor-playbook",
+    "installedAt":  "2026-06-13T13:13:36.5790755+09:00"
+}

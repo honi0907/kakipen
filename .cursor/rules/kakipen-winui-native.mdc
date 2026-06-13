@@ -1,0 +1,48 @@
+---
+description: WinUI 3 ネイティブ優先。Electron/kakimoni 設計の持ち込み禁止と外部出力ミラー
+alwaysApply: true
+---
+
+# WinUI 3 ネイティブ優先
+
+kakipen は WinUI 3 + .NET。**Electron や kakimoni-all の「やり方」を WinUI に移植しない。**
+
+- `kakimoni-all` … **仕様・挙動の参照のみ**（`client-display` HTML、socket.io 同期のコピー禁止）
+- 同一プロセスで完結できること … **サーバー経由にしない**
+
+## WinUI 3 ならこちらを使う
+
+| やりたいこと | 正攻法 |
+|-------------|--------|
+| 外部モニター | 第2 `Window` + `DisplayArea` + `AppWindow` |
+| 外部出力の中身 | **複製ミラー**: 書き画面と同データ → `CanvasImageSource` → `Image` |
+| ペン描画 | `Pointer` + Win2D `CanvasControl` |
+| 背景・ロゴ | ローカル `assets/` + `BackgroundImageService` |
+| GO / ロゴ cover | `DisplayWindow` の `CoverPanel` + `SetCoverRevealed` |
+
+## 避ける（過去に白/黒画面・クラッシュの原因）
+
+- 第2ウィンドウで Win2D / 描画パイプラインを**一から再実装**
+- 外部出力に **WebView2 + `/client-display` HTML**（Electron と同じ複雑さ）
+- **プロセス内ミラー + SignalR `RegisterClientDisplay`** の二重同期
+- `await` 後に **UI スレッド外**で `new DisplayWindow()` や XAML 更新
+- Win2D **`Draw` コールバック内**からミラー描画・`Image.Source` 更新（必ず `DispatcherQueue` に逃がす）
+- **`uiQueue.TryEnqueue` コールバック内に try/catch なし** → `PositionOnExternalDisplay` 内の `presenter.SetBorderAndTitleBar` / `presenter.Maximize` がウィンドウ生成直後に `COMException` を投げるとアプリ全体がクラッシュする。**必ず try/catch で保護すること**
+- **`PositionOnExternalDisplay` の呼び出しを await しない** → ウィンドウ生成前にロゴ読み込みが走ると順序不定になる。`TaskCompletionSource` で await してから次の処理へ進む
+
+## 外部出力（確定パターン）
+
+```
+WritingPage.DrawCanvas_Draw
+  → DisplaySurfaceRenderer（共有）
+  → DisplayOutputService.PublishMirror（UI キュー経由）
+  → DisplayWindow.MirrorImage
+```
+
+- 第2ウィンドウの中身は **`Image` + `Viewbox`（16:9）** が主。Win2D は子機側のみ
+- ロゴなし … cover 非表示で即書き画面。ロゴあり … GO で cover 解除
+
+## 第2ウィンドウの注意
+
+- コンテンツは **XAML の `UserControl` / `Grid`**（`Page` 直置きはレイアウト 0 になりやすい）
+- Window の生成・閉じる・`Image` 更新は **必ず `DispatcherQueue` 上**
