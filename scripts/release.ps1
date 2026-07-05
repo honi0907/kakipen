@@ -21,10 +21,10 @@ if ($WithPortableZip) {
 }
 Write-Host ""
 
-$publishArgs = @("-SkipZip")
-if ($WithPortableZip) { $publishArgs = @() }
-if ($SkipInstaller) { $publishArgs += "-SkipInstaller" }
-& (Join-Path $PSScriptRoot "publish-apps.ps1") @publishArgs
+$publishParams = @{}
+if (-not $WithPortableZip) { $publishParams.SkipZip = $true }
+if ($SkipInstaller) { $publishParams.SkipInstaller = $true }
+& (Join-Path $PSScriptRoot "publish-apps.ps1") @publishParams
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $dist = Join-Path $root "dist"
