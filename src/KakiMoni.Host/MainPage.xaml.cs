@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Windows.ApplicationModel.DataTransfer;
+using Windows.UI;
 
 namespace KakiMoni_Host;
 
@@ -20,6 +21,15 @@ public sealed partial class MainPage : Page
     private bool _seatPollInFlight;
     private bool _displayToggleBusy;
     private bool _networkUiReady;
+
+    private static readonly SolidColorBrush LauncherStopBrush =
+        new(ColorHelper.FromArgb(255, 220, 38, 38));
+
+    private static readonly SolidColorBrush LauncherActionBrush =
+        new(ColorHelper.FromArgb(255, 37, 99, 235));
+
+    private static readonly SolidColorBrush LauncherButtonForeground =
+        new(Colors.White);
 
     public MainPage()
     {
@@ -132,6 +142,7 @@ public sealed partial class MainPage : Page
                 MinHeight = 56,
                 Padding = new Thickness(6, 10, 6, 10),
                 CornerRadius = new CornerRadius(4),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
                 Child = stack
             };
             ApplySeatCellStyle(cell, idLabel, statusLabel, connected: false);
@@ -164,7 +175,6 @@ public sealed partial class MainPage : Page
                 string.IsNullOrWhiteSpace(stopMessage) ? "停止中" : "サーバー停止",
                 stopMessage);
             ChildUrlText.Text = string.Empty;
-            CompanelUrlText.Text = string.Empty;
             UrlPanel.Visibility = Visibility.Collapsed;
             DisplayStatusText.Visibility = Visibility.Collapsed;
             SeatsSummaryText.Text = string.Empty;
@@ -173,6 +183,7 @@ public sealed partial class MainPage : Page
             UpdateSeatCells(Array.Empty<SeatStatusEntry>());
             UpdateDisplayToggleLabel();
             UpdateNetworkPreview();
+            ApplyLauncherButtonStyles(serverRunning: false);
             return;
         }
 
@@ -182,7 +193,6 @@ public sealed partial class MainPage : Page
         ChildUrlText.Text = string.IsNullOrWhiteSpace(childUrl)
             ? "（LAN IP 未検出）"
             : childUrl;
-        CompanelUrlText.Text = "このPC内（WinUI コンパネ）";
         CopyChildUrlButton.IsEnabled = !string.IsNullOrWhiteSpace(childUrl);
 
         var displayStatus = AppHostContext.DisplayOutput.StatusText;
@@ -199,6 +209,28 @@ public sealed partial class MainPage : Page
         UpdateDisplayToggleLabel();
         _seatPollTimer.Start();
         _ = RefreshSeatsAsync();
+        ApplyLauncherButtonStyles(serverRunning: true);
+    }
+
+    private void ApplyLauncherButtonStyles(bool serverRunning)
+    {
+        if (!serverRunning)
+        {
+            StopButton.ClearValue(Button.BackgroundProperty);
+            StopButton.ClearValue(Button.ForegroundProperty);
+            CompanelButton.ClearValue(Button.BackgroundProperty);
+            CompanelButton.ClearValue(Button.ForegroundProperty);
+            DisplayToggleButton.ClearValue(Button.BackgroundProperty);
+            DisplayToggleButton.ClearValue(Button.ForegroundProperty);
+            return;
+        }
+
+        StopButton.Background = LauncherStopBrush;
+        StopButton.Foreground = LauncherButtonForeground;
+        CompanelButton.Background = LauncherActionBrush;
+        CompanelButton.Foreground = LauncherButtonForeground;
+        DisplayToggleButton.Background = LauncherActionBrush;
+        DisplayToggleButton.Foreground = LauncherButtonForeground;
     }
 
     private void SetStatusInfoBar(InfoBarSeverity severity, string title, string? message)
