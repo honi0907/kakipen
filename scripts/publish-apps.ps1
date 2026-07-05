@@ -92,6 +92,18 @@ dotnet @publishArgs -o (Join-Path $dist "Layout")
 if ($LASTEXITCODE -ne 0) { Pop-Location; exit $LASTEXITCODE }
 Pop-Location
 
+$priChecks = @(
+    @{ Dir = "Host"; Pri = "KakiMoni.Host.pri" },
+    @{ Dir = "Client"; Pri = "KakiMoni.Client.pri" },
+    @{ Dir = "Layout"; Pri = "KakiMoni.Layout.pri" }
+)
+foreach ($check in $priChecks) {
+    $priPath = Join-Path $dist $check.Dir $check.Pri
+    if (-not (Test-Path $priPath)) {
+        throw "Missing WinUI resource file (app will not start): $priPath"
+    }
+}
+
 $assetsSource = Join-Path $root "assets"
 if (-not $SkipZip) {
     New-Item -ItemType Directory -Force -Path (Join-Path $dist "assets") | Out-Null

@@ -46,7 +46,7 @@ dotnet build -c Debug -p:Platform=x64
 
 ## Publish / Release
 
-バージョン正本: `Directory.Build.props`（現在 **0.0.1**）。手順詳細: [BUILD_RULES.md](BUILD_RULES.md)
+バージョン正本: `Directory.Build.props`（現在 **0.0.2**）。手順詳細: [BUILD_RULES.md](BUILD_RULES.md)
 
 ```powershell
 cd C:\Users\k-mizukami\Desktop\kakipen

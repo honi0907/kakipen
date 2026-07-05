@@ -1,0 +1,17 @@
+<Project>
+  <!--
+    WinUI unpackaged: dotnet publish can omit $(AssemblyName).pri.
+    Without it the app crashes silently in Microsoft.UI.Xaml.dll (0xc000027b).
+  -->
+  <Target Name="IncludeAppPriInPublish"
+          AfterTargets="ComputeFilesToPublish"
+          Condition="'$(UseWinUI)' == 'true'">
+    <ItemGroup>
+      <_AppPriFile Include="$(OutputPath)$(AssemblyName).pri"
+                   Condition="Exists('$(OutputPath)$(AssemblyName).pri')" />
+      <ResolvedFileToPublish Include="@(_AppPriFile)"
+                             RelativePath="%(Filename)%(Extension)"
+                             CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+  </Target>
+</Project>
