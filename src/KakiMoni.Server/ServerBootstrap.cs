@@ -33,6 +33,7 @@ public sealed class ServerBootstrap : IAsyncDisposable
 
         Port = port;
         Directory.CreateDirectory(AppInstallPaths.SavesPath);
+        AssetFolderInitializer.EnsureDefaultFolders(contentRoot);
 
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {

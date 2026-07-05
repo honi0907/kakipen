@@ -198,6 +198,14 @@
                                HorizontalAlignment="Right" />
                 </StackPanel>
 
+                <CheckBox x:Name="CompanelFullscreenCheck"
+                          Grid.Row="1"
+                          Content="コンパネをフルスクリーンで開く"
+                          HorizontalAlignment="Right"
+                          VerticalAlignment="Center"
+                          Checked="OnCompanelFullscreenChanged"
+                          Unchecked="OnCompanelFullscreenChanged" />
+
                 <StackPanel Grid.Row="2"
                             Spacing="4"
                             VerticalAlignment="Bottom"
@@ -211,10 +219,24 @@
                                TextWrapping="WrapWholeWords"
                                HorizontalAlignment="Right"
                                Text="未確認" />
-                    <Button x:Name="OnlineUpdateButton"
-                            Content="親機をオンライン更新"
-                            Click="OnOnlineUpdateClick"
-                            HorizontalAlignment="Right" />
+                    <Grid HorizontalAlignment="Right"
+                          ColumnSpacing="8"
+                          MaxWidth="420">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button x:Name="OpenAssetsFolderButton"
+                                Grid.Column="0"
+                                Content="アセットフォルダを開く"
+                                HorizontalAlignment="Stretch"
+                                Click="OnOpenAssetsFolderClick" />
+                        <Button x:Name="OnlineUpdateButton"
+                                Grid.Column="1"
+                                Content="親機をオンライン更新"
+                                HorizontalAlignment="Stretch"
+                                Click="OnOnlineUpdateClick" />
+                    </Grid>
                 </StackPanel>
             </Grid>
         </Grid>

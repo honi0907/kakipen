@@ -86,6 +86,15 @@ public static class HostSettingsDialog
         panel.Children.Add(lockOpacitySlider);
         panel.Children.Add(lockOpacityDesc);
 
+        var assetsButton = new Button
+        {
+            Content = "アセットフォルダを開く",
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Margin = new Thickness(0, 16, 0, 0)
+        };
+        assetsButton.Click += (_, _) => HostAssetFolderLauncher.TryOpen(out _);
+        panel.Children.Add(assetsButton);
+
         var dialog = new ContentDialog
         {
             Title = "⚙ システム設定",
@@ -99,13 +108,11 @@ public static class HostSettingsDialog
         if (await dialog.ShowAsync() != ContentDialogResult.Primary)
             return false;
 
-        HostSettingsStore.Save(new HostSettings
-        {
-            StandbyUnlockAll = standbyCheck.IsChecked == true,
-            JudgeColorMode = judgeColorCheck.IsChecked == true,
-            UseSeatNameFile = seatNameCheck.IsChecked == true,
-            LockOverlayOpacityPercent = (int)lockOpacitySlider.Value
-        });
+        settings.StandbyUnlockAll = standbyCheck.IsChecked == true;
+        settings.JudgeColorMode = judgeColorCheck.IsChecked == true;
+        settings.UseSeatNameFile = seatNameCheck.IsChecked == true;
+        settings.LockOverlayOpacityPercent = (int)lockOpacitySlider.Value;
+        HostSettingsStore.Save(settings);
         return true;
     }
 }

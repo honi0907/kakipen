@@ -404,11 +404,13 @@ public sealed partial class CompanelPage : Page
 
     private void OnLauncherClick(object sender, RoutedEventArgs e)
     {
-        CompanelWindowHelper.EnsureLauncherWindowSize(App.HostWindow);
-        if (Frame?.CanGoBack == true)
-            Frame.GoBack();
+        if (App.HostWindow is MainWindow mainWindow)
+            mainWindow.ReturnToLauncher();
         else
+        {
+            CompanelWindowHelper.EnsureLauncherWindowSize(App.HostWindow);
             Frame?.Navigate(typeof(MainPage));
+        }
     }
 
     private void OnBoardSeatSelectClicked(object? sender, int seatId)

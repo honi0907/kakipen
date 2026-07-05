@@ -19,6 +19,94 @@
             <SolidColorBrush x:Key="LayoutSidebarMutedBrush" Color="#94a3b8" />
             <SolidColorBrush x:Key="LayoutSidebarHintBrush" Color="#cbd5e1" />
 
+            <Style x:Key="LauncherColoredButtonStyle" TargetType="Button">
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="CornerRadius" Value="4" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Padding" Value="8,6" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="RootBorder"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="{TemplateBinding CornerRadius}"
+                                    RenderTransformOrigin="0.5,0.5">
+                                <Border.RenderTransform>
+                                    <TranslateTransform x:Name="PressTransform" />
+                                </Border.RenderTransform>
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup x:Name="CommonStates">
+                                        <VisualState x:Name="Normal">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="RootBorder"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="1"
+                                                                 Duration="0:0:0.05" />
+                                                <DoubleAnimation Storyboard.TargetName="PressTransform"
+                                                                 Storyboard.TargetProperty="Y"
+                                                                 To="0"
+                                                                 Duration="0:0:0.05" />
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="PointerOver">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="RootBorder"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.9"
+                                                                 Duration="0:0:0.05" />
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="Pressed">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="RootBorder"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.72"
+                                                                 Duration="0:0:0.05" />
+                                                <DoubleAnimation Storyboard.TargetName="PressTransform"
+                                                                 Storyboard.TargetProperty="Y"
+                                                                 To="1.5"
+                                                                 Duration="0:0:0.05" />
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="Disabled">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="RootBorder"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.4"
+                                                                 Duration="0:0:0" />
+                                            </Storyboard>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
+                                <ContentPresenter HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                  Padding="{TemplateBinding Padding}"
+                                                  Content="{TemplateBinding Content}"
+                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                  Foreground="{TemplateBinding Foreground}" />
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="LauncherStopButtonStyle"
+                   TargetType="Button"
+                   BasedOn="{StaticResource LauncherColoredButtonStyle}">
+                <Setter Property="Background" Value="#dc2626" />
+            </Style>
+
+            <Style x:Key="LauncherBlueButtonStyle"
+                   TargetType="Button"
+                   BasedOn="{StaticResource LauncherColoredButtonStyle}">
+                <Setter Property="Background" Value="#2563eb" />
+            </Style>
+
             <Style x:Key="GlobalActionButtonStyle" TargetType="Button">
                 <Setter Property="Width" Value="72" />
                 <Setter Property="Height" Value="72" />

@@ -27,4 +27,7 @@ public sealed class HostSettings
     public LanAddressPreference NetworkPreference { get; set; } = LanAddressPreference.FirstFound;
 
     public string? ManualNetworkAddress { get; set; }
+
+    /// <summary>コンパネ表示時にメインウィンドウをフルスクリーンにする。</summary>
+    public bool CompanelFullscreen { get; set; }
 }

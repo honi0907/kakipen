@@ -7,7 +7,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Windows.ApplicationModel.DataTransfer;
-using Windows.UI;
 
 namespace KakiMoni_Host;
 
@@ -21,15 +20,7 @@ public sealed partial class MainPage : Page
     private bool _seatPollInFlight;
     private bool _displayToggleBusy;
     private bool _networkUiReady;
-
-    private static readonly SolidColorBrush LauncherStopBrush =
-        new(ColorHelper.FromArgb(255, 220, 38, 38));
-
-    private static readonly SolidColorBrush LauncherActionBrush =
-        new(ColorHelper.FromArgb(255, 37, 99, 235));
-
-    private static readonly SolidColorBrush LauncherButtonForeground =
-        new(Colors.White);
+    private bool _companelFullscreenUiReady;
 
     public MainPage()
     {
@@ -48,7 +39,25 @@ public sealed partial class MainPage : Page
         Debug.WriteLine(StartupText.Text);
         AppHostContext.Server.StateChanged += OnServerStateChanged;
         InitializeNetworkUi();
+        InitializeCompanelFullscreenUi();
         RefreshUi();
+    }
+
+    private void InitializeCompanelFullscreenUi()
+    {
+        _companelFullscreenUiReady = false;
+        CompanelFullscreenCheck.IsChecked = HostSettingsStore.Load().CompanelFullscreen;
+        _companelFullscreenUiReady = true;
+    }
+
+    private void OnCompanelFullscreenChanged(object sender, RoutedEventArgs e)
+    {
+        if (!_companelFullscreenUiReady)
+            return;
+
+        var settings = HostSettingsStore.Load();
+        settings.CompanelFullscreen = CompanelFullscreenCheck.IsChecked == true;
+        HostSettingsStore.Save(settings);
     }
 
     private void InitializeNetworkUi()
@@ -216,21 +225,15 @@ public sealed partial class MainPage : Page
     {
         if (!serverRunning)
         {
-            StopButton.ClearValue(Button.BackgroundProperty);
-            StopButton.ClearValue(Button.ForegroundProperty);
-            CompanelButton.ClearValue(Button.BackgroundProperty);
-            CompanelButton.ClearValue(Button.ForegroundProperty);
-            DisplayToggleButton.ClearValue(Button.BackgroundProperty);
-            DisplayToggleButton.ClearValue(Button.ForegroundProperty);
+            StopButton.ClearValue(Button.StyleProperty);
+            CompanelButton.ClearValue(Button.StyleProperty);
+            DisplayToggleButton.ClearValue(Button.StyleProperty);
             return;
         }
 
-        StopButton.Background = LauncherStopBrush;
-        StopButton.Foreground = LauncherButtonForeground;
-        CompanelButton.Background = LauncherActionBrush;
-        CompanelButton.Foreground = LauncherButtonForeground;
-        DisplayToggleButton.Background = LauncherActionBrush;
-        DisplayToggleButton.Foreground = LauncherButtonForeground;
+        StopButton.Style = (Style)Application.Current.Resources["LauncherStopButtonStyle"];
+        CompanelButton.Style = (Style)Application.Current.Resources["LauncherBlueButtonStyle"];
+        DisplayToggleButton.Style = (Style)Application.Current.Resources["LauncherBlueButtonStyle"];
     }
 
     private void SetStatusInfoBar(InfoBarSeverity severity, string title, string? message)
@@ -448,5 +451,13 @@ public sealed partial class MainPage : Page
         var package = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
         package.SetText(text);
         Clipboard.SetContent(package);
+    }
+
+    private void OnOpenAssetsFolderClick(object sender, RoutedEventArgs e)
+    {
+        if (HostAssetFolderLauncher.TryOpen(out var error))
+            return;
+
+        SetStatusInfoBar(InfoBarSeverity.Warning, "アセットフォルダを開けません", error);
     }
 }

@@ -1,6 +1,8 @@
 using KakiMoni_Host.Services;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 
 namespace KakiMoni_Host;
 
@@ -113,6 +115,65 @@ public sealed partial class MainWindow : Window
     {
         _allowClose = true;
         Close();
+    }
+
+    public void ApplyCompanelFullscreenChrome(bool fullscreen)
+    {
+        if (fullscreen)
+        {
+            AppTitleBar.Visibility = Visibility.Collapsed;
+            ExtendsContentIntoTitleBar = false;
+            SetTitleBar(null);
+            Grid.SetRow(RootFrame, 0);
+            Grid.SetRowSpan(RootFrame, 2);
+            return;
+        }
+
+        ExtendsContentIntoTitleBar = true;
+        SetTitleBar(AppTitleBar);
+        AppTitleBar.Visibility = Visibility.Visible;
+        Grid.SetRow(RootFrame, 1);
+        Grid.SetRowSpan(RootFrame, 1);
+
+        if (AppWindowTitleBar.IsCustomizationSupported())
+            AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Standard;
+        AppWindow.TitleBar.ExtendsContentIntoTitleBar = true;
+    }
+
+    public void RestoreLauncherPresentation()
+    {
+        ApplyCompanelFullscreenChrome(false);
+        try
+        {
+            SystemBackdrop = null;
+            SystemBackdrop = new MicaBackdrop();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainWindow] RestoreLauncherPresentation backdrop failed: {ex.Message}");
+        }
+
+        RootFrame.UpdateLayout();
+        if (Content is FrameworkElement root)
+            root.UpdateLayout();
+
+        Activate();
+    }
+
+    public void ReturnToLauncher()
+    {
+        CompanelWindowHelper.EnsureLauncherWindowSize(this);
+
+        while (RootFrame.BackStack.Count > 0)
+            RootFrame.BackStack.RemoveAt(RootFrame.BackStack.Count - 1);
+
+        RootFrame.Navigate(typeof(MainPage));
+        RestoreLauncherPresentation();
+    }
+
+    public void RefreshLauncherPresentation()
+    {
+        RestoreLauncherPresentation();
     }
 
     private void ShowOverlay(string message)

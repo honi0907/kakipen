@@ -48,6 +48,90 @@ public static class HostDisplayWindowLayout
         }
     }
 
+    public static void ConfigureNormalPresenter(AppWindow appWindow)
+    {
+        try
+        {
+            if (appWindow.Presenter is OverlappedPresenter current
+                && current.State == OverlappedPresenterState.Maximized)
+            {
+                try { current.Restore(); } catch { }
+            }
+
+            var presenter = OverlappedPresenter.Create();
+            presenter.SetBorderAndTitleBar(true, true);
+            presenter.IsMaximizable = true;
+            presenter.IsMinimizable = true;
+            presenter.IsResizable = true;
+            appWindow.SetPresenter(presenter);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[HostDisplayWindowLayout] ConfigureNormalPresenter failed: {ex}");
+        }
+    }
+
+    public static void ApplyPrimaryMonitorFullscreen(Window window, AppWindow appWindow)
+    {
+        PrepareDisplayWin32FullscreenChrome(window, appWindow);
+        ConfigureDisplayBorderlessPresenter(window, appWindow);
+
+        var hwnd = WindowNative.GetWindowHandle(window);
+        var bounds = HostMonitorHelper.GetPrimaryMonitorBounds(useFullMonitorBounds: true);
+        if (bounds is not null)
+        {
+            var expanded = HostMonitorHelper.ExpandBounds(bounds.Value, overscanPixels: 2);
+            HostMonitorHelper.ApplyWin32BorderlessAndBounds(hwnd, expanded, popupStyle: true);
+            return;
+        }
+
+        try
+        {
+            var area = DisplayArea.Primary;
+            appWindow.MoveAndResize(area.OuterBounds, area);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[HostDisplayWindowLayout] ApplyPrimaryMonitorFullscreen fallback failed: {ex}");
+        }
+    }
+
+    /// <summary>
+    /// コンパネ用フルスクリーン。MainWindow では Win32 を触らない（ランチャー復帰で白画面になるため）。
+    /// </summary>
+    public static void ApplyCompanelFullscreen(Window window, AppWindow appWindow)
+    {
+        PrepareDisplayWin32FullscreenChrome(window, appWindow);
+        ConfigureDisplayBorderlessPresenter(window, appWindow);
+
+        try
+        {
+            var area = DisplayArea.Primary;
+            appWindow.MoveAndResize(area.OuterBounds, area);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[HostDisplayWindowLayout] ApplyCompanelFullscreen failed: {ex}");
+        }
+    }
+
+    public static void CenterOnPrimaryWorkArea(AppWindow appWindow, int width, int height)
+    {
+        if (HostMonitorHelper.GetPrimaryMonitorBounds(useFullMonitorBounds: false) is not { } bounds)
+            return;
+
+        var x = bounds.Left + Math.Max(0, (bounds.Width - width) / 2);
+        var y = bounds.Top + Math.Max(0, (bounds.Height - height) / 2);
+        try
+        {
+            appWindow.Move(new PointInt32(x, y));
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[HostDisplayWindowLayout] CenterOnPrimaryWorkArea failed: {ex}");
+        }
+    }
+
     public static bool MoveToSecondaryMonitor(AppWindow appWindow, bool useFullMonitorBounds)
     {
         var bounds = HostMonitorHelper.GetSecondaryMonitorBounds(useFullMonitorBounds);

@@ -47,13 +47,58 @@ public static class HostMonitorHelper
             return null;
 
         var rect = useFullMonitorBounds ? monitor.Value.Monitor : monitor.Value.Work;
-        return new MonitorBounds(
+        return ToMonitorBounds(rect, false);
+    }
+
+    public static MonitorBounds? GetPrimaryMonitorBounds(bool useFullMonitorBounds)
+    {
+        foreach (var monitor in EnumerateMonitors())
+        {
+            if (!monitor.IsPrimary)
+                continue;
+
+            var rect = useFullMonitorBounds ? monitor.Monitor : monitor.Work;
+            return ToMonitorBounds(rect, true);
+        }
+
+        return null;
+    }
+
+    /// <summary>WS_POPUP 等から通常のオーバーラップウィンドウへ戻す。</summary>
+    public static void RestoreWin32OverlappedWindow(IntPtr hwnd)
+    {
+        const int wsOverlappedWindow = unchecked((int)0x00CF0000);
+
+        try
+        {
+            SetWindowLong(hwnd, GwlStyle, wsOverlappedWindow);
+
+            var exStyle = GetWindowLong(hwnd, GwlExStyle);
+            exStyle &= ~(WsExWindowEdge | WsExClientEdge);
+            SetWindowLong(hwnd, GwlExStyle, exStyle);
+
+            SetWindowPos(
+                hwnd,
+                IntPtr.Zero,
+                0,
+                0,
+                0,
+                0,
+                SwpNoMove | SwpNoSize | SwpNoZOrder | SwpFrameChanged | SwpNoActivate);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[HostMonitorHelper] RestoreWin32OverlappedWindow failed: {ex}");
+        }
+    }
+
+    private static MonitorBounds ToMonitorBounds(Rect rect, bool isPrimary) =>
+        new(
             rect.Left,
             rect.Top,
             rect.Right - rect.Left,
             rect.Bottom - rect.Top,
-            false);
-    }
+            isPrimary);
 
     public static MonitorBounds? GetWindowBounds(IntPtr hwnd)
     {
