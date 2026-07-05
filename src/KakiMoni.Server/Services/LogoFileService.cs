@@ -1,5 +1,7 @@
 namespace KakiMoni.Server.Services;
 
+using KakiMoni.Core.Paths;
+
 public sealed class LogoFileService
 {
     private static readonly string[] SupportedExtensions =
@@ -10,7 +12,7 @@ public sealed class LogoFileService
     public LogoFileService(string contentRoot)
     {
         _logoDir = Path.Combine(contentRoot, "assets", "logo");
-        Directory.CreateDirectory(_logoDir);
+        AppInstallPaths.SafeCreateDirectory(_logoDir);
     }
 
     public string? GetDefaultRelativeUrl()

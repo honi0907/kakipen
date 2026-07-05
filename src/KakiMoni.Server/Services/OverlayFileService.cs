@@ -1,5 +1,7 @@
 namespace KakiMoni.Server.Services;
 
+using KakiMoni.Core.Paths;
+
 public sealed class OverlayFileService
 {
     private static readonly string[] SupportedExtensions =
@@ -10,8 +12,8 @@ public sealed class OverlayFileService
     public OverlayFileService(string contentRoot)
     {
         _overlaysDir = Path.Combine(contentRoot, "assets", "overlays");
-        Directory.CreateDirectory(Path.Combine(_overlaysDir, "correct"));
-        Directory.CreateDirectory(Path.Combine(_overlaysDir, "incorrect"));
+        AppInstallPaths.SafeCreateDirectory(Path.Combine(_overlaysDir, "correct"));
+        AppInstallPaths.SafeCreateDirectory(Path.Combine(_overlaysDir, "incorrect"));
     }
 
     public IReadOnlyDictionary<string, IReadOnlyList<string>> ListAll()

@@ -1,4 +1,5 @@
 using KakiMoni.Core.Models;
+using KakiMoni.Core.Paths;
 
 namespace KakiMoni.Server.Services;
 
@@ -14,7 +15,7 @@ public sealed class ChoiceFileService
     public ChoiceFileService(string contentRoot)
     {
         _choicesDir = Path.Combine(contentRoot, "assets", "choices");
-        Directory.CreateDirectory(_choicesDir);
+        AppInstallPaths.SafeCreateDirectory(_choicesDir);
     }
 
     public IReadOnlyList<BackgroundFileEntry> ListChoices()

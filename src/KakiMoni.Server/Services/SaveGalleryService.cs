@@ -15,7 +15,7 @@ public sealed class SaveGalleryService
     public SaveGalleryService(string contentRoot)
     {
         _ = contentRoot;
-        _savesDir = ContentRootResolver.SavesPath;
+        _savesDir = AppInstallPaths.SavesPath;
         Directory.CreateDirectory(_savesDir);
     }
 

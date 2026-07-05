@@ -20,7 +20,7 @@ public sealed class SaveGalleryLiveService : IDisposable
             if (_started)
                 return;
 
-            var savesDir = ContentRootResolver.SavesPath;
+            var savesDir = AppInstallPaths.SavesPath;
             Directory.CreateDirectory(savesDir);
             WatchDirectory(savesDir);
 

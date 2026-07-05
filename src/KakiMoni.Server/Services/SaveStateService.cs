@@ -14,7 +14,7 @@ public sealed class SaveStateService
     public SaveStateService(string contentRoot)
     {
         _ = contentRoot;
-        _savesDir = ContentRootResolver.SavesPath;
+        _savesDir = AppInstallPaths.SavesPath;
         _statePath = Path.Combine(_savesDir, ".state.json");
         Directory.CreateDirectory(_savesDir);
         EnsureSeatFolders();

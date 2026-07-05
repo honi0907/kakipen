@@ -1,3 +1,4 @@
+using System.Net.Sockets;
 using KakiMoni.Core.Models;
 using KakiMoni.Core.Paths;
 using KakiMoni.Server.Hubs;
@@ -18,13 +19,15 @@ public sealed class ServerBootstrap : IAsyncDisposable
     public bool IsRunning => _app is not null;
     public int Port { get; private set; }
 
+    public event Action? Stopped;
+
     public async Task StartAsync(string contentRoot, int port, bool useSeatNameFile = false, CancellationToken cancellationToken = default)
     {
         if (_app is not null)
             return;
 
         Port = port;
-        Directory.CreateDirectory(ContentRootResolver.SavesPath);
+        Directory.CreateDirectory(AppInstallPaths.SavesPath);
 
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
@@ -33,6 +36,10 @@ public sealed class ServerBootstrap : IAsyncDisposable
         });
 
         builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+        builder.Host.ConfigureServices(services =>
+        {
+            services.AddSingleton<IHostLifetime, WinUiEmbeddedHostLifetime>();
+        });
         builder.Services.AddSingleton(new BackgroundFileService(contentRoot));
         builder.Services.AddSingleton(new ChoiceFileService(contentRoot));
         builder.Services.AddSingleton(new LogoFileService(contentRoot));
@@ -61,8 +68,31 @@ public sealed class ServerBootstrap : IAsyncDisposable
 
         app.Services.GetRequiredService<SaveGalleryLiveService>().Start(contentRoot);
 
-        await app.StartAsync(cancellationToken);
+        var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+        lifetime.ApplicationStopped.Register(OnHostStopped);
+
+        try
+        {
+            await app.StartAsync(cancellationToken);
+        }
+        catch (Exception ex) when (IsPortInUse(ex))
+        {
+            await app.DisposeAsync();
+            throw new InvalidOperationException(
+                $"ポート {port} は既に使用中です。他の KakiMoni 親機を終了するか、ポート番号を変えてください。",
+                ex);
+        }
+
         _app = app;
+    }
+
+    private void OnHostStopped()
+    {
+        if (_app is null)
+            return;
+
+        _app = null;
+        Stopped?.Invoke();
     }
 
     public async Task StopAsync(CancellationToken cancellationToken = default)
@@ -70,9 +100,10 @@ public sealed class ServerBootstrap : IAsyncDisposable
         if (_app is null)
             return;
 
-        await _app.StopAsync(cancellationToken);
-        await _app.DisposeAsync();
+        var app = _app;
         _app = null;
+        await app.StopAsync(cancellationToken);
+        await app.DisposeAsync();
     }
 
     public async ValueTask DisposeAsync() => await StopAsync();
@@ -88,7 +119,10 @@ public sealed class ServerBootstrap : IAsyncDisposable
 
     private static void MapFolder(WebApplication app, string physicalPath, string requestPath)
     {
-        Directory.CreateDirectory(physicalPath);
+        AppInstallPaths.SafeCreateDirectory(physicalPath);
+        if (!Directory.Exists(physicalPath))
+            return;
+
         app.UseStaticFiles(new StaticFileOptions
         {
             FileProvider = new PhysicalFileProvider(physicalPath),
@@ -330,4 +364,22 @@ public sealed class ServerBootstrap : IAsyncDisposable
         public string? Type { get; set; }
         public string? ImageData { get; set; }
     }
+
+    private static bool IsPortInUse(Exception ex)
+    {
+        for (var current = ex; current is not null; current = current.InnerException)
+        {
+            if (current is SocketException { SocketErrorCode: SocketError.AddressAlreadyInUse })
+                return true;
+        }
+
+        return false;
+    }
+}
+
+internal sealed class WinUiEmbeddedHostLifetime : IHostLifetime
+{
+    public Task WaitForStartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

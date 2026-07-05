@@ -1,4 +1,5 @@
 using KakiMoni.Core.Models;
+using KakiMoni.Core.Paths;
 
 namespace KakiMoni.Server.Services;
 
@@ -16,7 +17,7 @@ public sealed class BackgroundFileService
     {
         ContentRoot = contentRoot;
         _backgroundsDir = Path.Combine(contentRoot, "assets", "backgrounds");
-        Directory.CreateDirectory(_backgroundsDir);
+        AppInstallPaths.SafeCreateDirectory(_backgroundsDir);
     }
 
     public IReadOnlyList<string> ListBackgrounds() =>

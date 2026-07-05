@@ -109,7 +109,11 @@ public sealed partial class MainPage : Page
 
         if (!running)
         {
-            SetStatusInfoBar(InfoBarSeverity.Informational, "停止中", null);
+            var stopMessage = AppHostContext.Server.LastStopMessage;
+            SetStatusInfoBar(
+                string.IsNullOrWhiteSpace(stopMessage) ? InfoBarSeverity.Informational : InfoBarSeverity.Warning,
+                string.IsNullOrWhiteSpace(stopMessage) ? "停止中" : "サーバー停止",
+                stopMessage);
             ChildUrlText.Text = string.Empty;
             CompanelUrlText.Text = string.Empty;
             UrlPanel.Visibility = Visibility.Collapsed;
@@ -276,6 +280,7 @@ public sealed partial class MainPage : Page
             var port = (int)PortBox.Value;
             var useSeatNames = HostSettingsStore.Load().UseSeatNameFile;
             await AppHostContext.Server.StartAsync(ContentRootResolver.Resolve(), port, useSeatNames);
+            RefreshUi();
         }
         catch (Exception ex)
         {
