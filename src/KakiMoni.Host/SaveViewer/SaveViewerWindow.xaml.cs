@@ -175,7 +175,7 @@ public sealed partial class SaveViewerWindow : Window
             throw new InvalidOperationException("ResolveServerBaseUrl must run on the UI thread.");
 
         if (AppHostContext.Server.IsRunning)
-            return AppHostContext.Server.BaseUrl.TrimEnd('/');
+            return AppHostContext.Server.LocalBaseUrl.TrimEnd('/');
 
         var url = SaveGalleryApiService.NormalizeServerUrl(ServerUrlBox.Text);
         if (string.IsNullOrEmpty(url))

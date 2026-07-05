@@ -9,6 +9,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Windows.ApplicationModel.DataTransfer;
 using Windows.UI;
 
 namespace KakiMoni_Host;
@@ -31,6 +32,7 @@ public sealed partial class CompanelPage : Page
         .Select(_ => new SemaphoreSlim(1, 1))
         .ToArray();
     private readonly Dictionary<int, TaskCompletionSource<bool>> _blackoutConfirmations = new();
+    private bool _networkUiReady;
 
     public CompanelPage()
     {
@@ -51,8 +53,29 @@ public sealed partial class CompanelPage : Page
         WireActionBoard();
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
+        InitializeNetworkUi();
         UpdateUrlText();
         UpdateSaveUi();
+    }
+
+    private void InitializeNetworkUi()
+    {
+        var settings = HostSettingsStore.Load();
+        _networkUiReady = false;
+        HostNetworkUiHelper.BindAdapterCombo(NetworkAdapterCombo, settings);
+        _networkUiReady = true;
+        NetworkAdapterCombo.IsEnabled = !AppHostContext.Server.IsRunning;
+    }
+
+    private void OnNetworkSettingChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_networkUiReady || AppHostContext.Server.IsRunning)
+            return;
+
+        var settings = HostSettingsStore.Load();
+        HostNetworkUiHelper.ApplyComboSelectionToSettings(NetworkAdapterCombo, settings);
+        HostSettingsStore.Save(settings);
+        UpdateUrlText();
     }
 
     private void OnPageSizeChanged(object sender, SizeChangedEventArgs e) =>
@@ -92,6 +115,7 @@ public sealed partial class CompanelPage : Page
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         CompanelWindowHelper.EnsureCompanelWindowSize(App.HostWindow);
+        InitializeNetworkUi();
         UpdateUrlText();
         SetGlobalControlsEnabled(AppHostContext.Server.IsRunning);
         UpdateSeatGridMetrics();
@@ -124,7 +148,7 @@ public sealed partial class CompanelPage : Page
             _hub.SeatWritingBlackoutReceived += OnSeatWritingBlackout;
             _hub.ConnectionChanged += OnHubConnectionChanged;
 
-            await _hub.ConnectAsync(AppHostContext.Server.BaseUrl);
+            await _hub.ConnectAsync(AppHostContext.Server.LocalBaseUrl);
             await SyncJudgeColorModeAsync();
             await SyncLockOverlayOpacityAsync();
             await SyncUseSeatNameFileAsync();
@@ -187,9 +211,29 @@ public sealed partial class CompanelPage : Page
 
     private void UpdateUrlText()
     {
-        UrlText.Text = AppHostContext.Server.IsRunning
-            ? AppHostContext.Server.BaseUrl
-            : string.Empty;
+        if (!AppHostContext.Server.IsRunning)
+        {
+            UrlText.Text = string.Empty;
+            CopyChildUrlButton.IsEnabled = false;
+            NetworkAdapterCombo.IsEnabled = true;
+            return;
+        }
+
+        var childUrl = AppHostContext.Server.ChildBaseUrl;
+        UrlText.Text = string.IsNullOrWhiteSpace(childUrl) ? "（LAN IP 未検出）" : childUrl;
+        CopyChildUrlButton.IsEnabled = !string.IsNullOrWhiteSpace(childUrl);
+        NetworkAdapterCombo.IsEnabled = false;
+    }
+
+    private void OnCopyChildUrlClick(object sender, RoutedEventArgs e)
+    {
+        var text = UrlText.Text?.Trim();
+        if (string.IsNullOrWhiteSpace(text) || text.StartsWith('（'))
+            return;
+
+        var package = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
+        package.SetText(text);
+        Clipboard.SetContent(package);
     }
 
     private void OnHubConnectionChanged(bool connected, bool reconnecting) =>
@@ -461,7 +505,7 @@ public sealed partial class CompanelPage : Page
 
         try
         {
-            var entries = await HostApiService.GetChoicesAsync(AppHostContext.Server.BaseUrl);
+            var entries = await HostApiService.GetChoicesAsync(AppHostContext.Server.LocalBaseUrl);
             var selectedUrl = _selectedChoiceRelativeUrl;
             ChoiceComboBox.ItemsSource = entries;
 
@@ -634,7 +678,7 @@ public sealed partial class CompanelPage : Page
 
             try
             {
-                var state = await HostSaveApiService.NextCounterAsync(AppHostContext.Server.BaseUrl);
+                var state = await HostSaveApiService.NextCounterAsync(AppHostContext.Server.LocalBaseUrl);
                 ApplySaveState(state);
                 foreach (var model in revealTargets)
                     await SaveSeatSnapshotAsync(model.SeatId, "GO");
@@ -849,7 +893,7 @@ public sealed partial class CompanelPage : Page
 
         try
         {
-            var state = await HostSaveApiService.GetStateAsync(AppHostContext.Server.BaseUrl);
+            var state = await HostSaveApiService.GetStateAsync(AppHostContext.Server.LocalBaseUrl);
             ApplySaveState(state);
         }
         catch (Exception ex)
@@ -923,7 +967,7 @@ public sealed partial class CompanelPage : Page
             if (await confirm.ShowAsync() != ContentDialogResult.Primary)
                 return;
 
-            var state = await HostSaveApiService.SetSessionAsync(AppHostContext.Server.BaseUrl, next);
+            var state = await HostSaveApiService.SetSessionAsync(AppHostContext.Server.LocalBaseUrl, next);
             ApplySaveState(state);
         }
         catch (Exception ex)
@@ -958,7 +1002,7 @@ public sealed partial class CompanelPage : Page
 
         try
         {
-            var state = await HostSaveApiService.SetCounterAsync(AppHostContext.Server.BaseUrl, next);
+            var state = await HostSaveApiService.SetCounterAsync(AppHostContext.Server.LocalBaseUrl, next);
             ApplySaveState(state);
         }
         catch (Exception ex)
@@ -984,11 +1028,11 @@ public sealed partial class CompanelPage : Page
             _selectedChoiceRelativeUrl,
             saveType,
             overlayUrl,
-            AppHostContext.Server.BaseUrl,
+            AppHostContext.Server.LocalBaseUrl,
             invertJudge);
 
         var fileName = await HostSaveApiService.SaveSnapshotAsync(
-            AppHostContext.Server.BaseUrl,
+            AppHostContext.Server.LocalBaseUrl,
             seatId,
             _saveSession,
             _saveCounter,

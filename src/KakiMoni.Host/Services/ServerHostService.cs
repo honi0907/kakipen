@@ -1,3 +1,4 @@
+using KakiMoni.Core.Network;
 using KakiMoni.Server;
 
 namespace KakiMoni_Host.Services;
@@ -5,7 +6,8 @@ namespace KakiMoni_Host.Services;
 public sealed class ServerHostService
 {
     private readonly ServerBootstrap _bootstrap = new();
-    private string _baseUrl = "http://127.0.0.1:3000";
+    private string _localBaseUrl = "http://127.0.0.1:3000";
+    private string _childBaseUrl = string.Empty;
     private string? _lastStopMessage;
 
     public ServerHostService()
@@ -14,16 +16,32 @@ public sealed class ServerHostService
     }
 
     public bool IsRunning => _bootstrap.IsRunning;
-    public string BaseUrl => _baseUrl;
+
+    /// <summary>親機自身の API / Hub 用（127.0.0.1）。</summary>
+    public string LocalBaseUrl => _localBaseUrl;
+
+    /// <summary>子機端末向け LAN URL。</summary>
+    public string ChildBaseUrl => _childBaseUrl;
+
+    /// <summary>互換: 内部呼び出しは LocalBaseUrl と同じ。</summary>
+    public string BaseUrl => _localBaseUrl;
+
     public string? LastStopMessage => _lastStopMessage;
 
     public event EventHandler? StateChanged;
 
-    public async Task StartAsync(string contentRoot, int port, bool useSeatNameFile = false, CancellationToken cancellationToken = default)
+    public async Task StartAsync(
+        string contentRoot,
+        int port,
+        HostSettings networkSettings,
+        bool useSeatNameFile = false,
+        CancellationToken cancellationToken = default)
     {
         _lastStopMessage = null;
-        await _bootstrap.StartAsync(contentRoot, port, useSeatNameFile, cancellationToken);
-        _baseUrl = $"http://127.0.0.1:{port}";
+        var bindAddress = HostNetworkService.ResolveBindAddress(networkSettings);
+        await _bootstrap.StartAsync(contentRoot, port, bindAddress, useSeatNameFile, cancellationToken);
+        _localBaseUrl = LanAddressResolver.BuildLocalBaseUrl(port);
+        _childBaseUrl = HostNetworkService.BuildChildBaseUrl(port, networkSettings);
         StateChanged?.Invoke(this, EventArgs.Empty);
     }
 

@@ -16,6 +16,9 @@ public static class HostSettingsStore
     public static void Save(HostSettings settings)
     {
         settings.LockOverlayOpacityPercent = Math.Clamp(settings.LockOverlayOpacityPercent, 0, 100);
+        settings.ManualNetworkAddress = string.IsNullOrWhiteSpace(settings.ManualNetworkAddress)
+            ? null
+            : settings.ManualNetworkAddress.Trim();
         Directory.CreateDirectory(System.IO.Path.GetDirectoryName(Path)!);
         File.WriteAllText(Path, JsonSerializer.Serialize(settings, JsonOptions));
     }

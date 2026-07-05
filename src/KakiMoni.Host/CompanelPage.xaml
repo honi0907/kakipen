@@ -84,13 +84,26 @@
                                    Maximum="9999"
                                    LostFocus="OnSaveCounterLostFocus" />
                     </Border>
+                    <ComboBox x:Name="NetworkAdapterCombo"
+                              MinWidth="140"
+                              MaxWidth="200"
+                              Height="32"
+                              DisplayMemberPath="Label"
+                              VerticalAlignment="Center"
+                              SelectionChanged="OnNetworkSettingChanged" />
                     <TextBlock x:Name="UrlText"
                                VerticalAlignment="Center"
                                Foreground="#6b7280"
                                FontSize="11"
-                               Margin="4,0,0,0"
+                               IsTextSelectionEnabled="True"
                                TextTrimming="CharacterEllipsis"
-                               MaxWidth="220" />
+                               MaxWidth="200" />
+                    <Button x:Name="CopyChildUrlButton"
+                            Content="コピー"
+                            Height="28"
+                            Padding="8,2"
+                            VerticalAlignment="Center"
+                            Click="OnCopyChildUrlClick" />
                 </StackPanel>
             </Grid>
         </Border>

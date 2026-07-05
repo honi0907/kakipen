@@ -49,6 +49,17 @@
                                    SpinButtonPlacementMode="Inline"
                                    HorizontalAlignment="Stretch" />
 
+                        <ComboBox x:Name="NetworkAdapterCombo"
+                                  Header="使用ネットワーク"
+                                  DisplayMemberPath="Label"
+                                  HorizontalAlignment="Stretch"
+                                  SelectionChanged="OnNetworkSettingChanged" />
+
+                        <ComboBox x:Name="NetworkPreferenceCombo"
+                                  Header="自動時の優先"
+                                  HorizontalAlignment="Stretch"
+                                  SelectionChanged="OnNetworkSettingChanged" />
+
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <Button x:Name="StartButton"
                                     Content="サーバー起動"
@@ -99,11 +110,18 @@
                                     <TextBlock Style="{ThemeResource CaptionTextBlockStyle}"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                Text="子機 URL" />
-                                    <TextBlock x:Name="ChildUrlText"
-                                               Style="{ThemeResource BodyTextBlockStyle}"
-                                               FontSize="13"
-                                               IsTextSelectionEnabled="True"
-                                               TextWrapping="WrapWholeWords" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock x:Name="ChildUrlText"
+                                                   Style="{ThemeResource BodyTextBlockStyle}"
+                                                   FontSize="13"
+                                                   IsTextSelectionEnabled="True"
+                                                   TextWrapping="WrapWholeWords"
+                                                   VerticalAlignment="Center" />
+                                        <Button x:Name="CopyChildUrlButton"
+                                                Content="コピー"
+                                                Click="OnCopyChildUrlClick"
+                                                VerticalAlignment="Center" />
+                                    </StackPanel>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Spacing="2">
                                     <TextBlock Style="{ThemeResource CaptionTextBlockStyle}"

@@ -164,7 +164,7 @@ public sealed partial class LayoutEditorWindow : Window
 
         try
         {
-            var entries = await HostApiService.GetBackgroundsAsync(AppHostContext.Server.BaseUrl);
+            var entries = await HostApiService.GetBackgroundsAsync(AppHostContext.Server.LocalBaseUrl);
             BgComboBox.Items.Clear();
             BgComboBox.Items.Add(new ComboBoxItem { Content = "なし", Tag = null });
             foreach (var entry in entries)

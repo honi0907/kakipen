@@ -21,7 +21,12 @@ public sealed class ServerBootstrap : IAsyncDisposable
 
     public event Action? Stopped;
 
-    public async Task StartAsync(string contentRoot, int port, bool useSeatNameFile = false, CancellationToken cancellationToken = default)
+    public async Task StartAsync(
+        string contentRoot,
+        int port,
+        string bindAddress = "0.0.0.0",
+        bool useSeatNameFile = false,
+        CancellationToken cancellationToken = default)
     {
         if (_app is not null)
             return;
@@ -35,7 +40,8 @@ public sealed class ServerBootstrap : IAsyncDisposable
             Args = Array.Empty<string>()
         });
 
-        builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+        var host = string.IsNullOrWhiteSpace(bindAddress) ? "0.0.0.0" : bindAddress.Trim();
+        builder.WebHost.UseUrls($"http://{host}:{port}");
         builder.Host.ConfigureServices(services =>
         {
             services.AddSingleton<IHostLifetime, WinUiEmbeddedHostLifetime>();

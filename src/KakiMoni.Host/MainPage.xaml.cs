@@ -6,6 +6,7 @@ using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Windows.ApplicationModel.DataTransfer;
 
 namespace KakiMoni_Host;
 
@@ -18,6 +19,7 @@ public sealed partial class MainPage : Page
     private readonly TextBlock[] _seatStatusLabels = new TextBlock[10];
     private bool _seatPollInFlight;
     private bool _displayToggleBusy;
+    private bool _networkUiReady;
 
     public MainPage()
     {
@@ -35,7 +37,53 @@ public sealed partial class MainPage : Page
         VersionText.Text = AppVersionDisplay.Label;
         Debug.WriteLine(StartupText.Text);
         AppHostContext.Server.StateChanged += OnServerStateChanged;
+        InitializeNetworkUi();
         RefreshUi();
+    }
+
+    private void InitializeNetworkUi()
+    {
+        var settings = HostSettingsStore.Load();
+        _networkUiReady = false;
+        HostNetworkUiHelper.BindAdapterCombo(NetworkAdapterCombo, settings);
+        HostNetworkUiHelper.BindPreferenceCombo(NetworkPreferenceCombo, settings);
+        _networkUiReady = true;
+        UpdateNetworkPreview();
+    }
+
+    private HostSettings ReadNetworkSettingsFromUi()
+    {
+        var settings = HostSettingsStore.Load();
+        HostNetworkUiHelper.ApplyComboSelectionToSettings(NetworkAdapterCombo, settings);
+        HostNetworkUiHelper.ApplyPreferenceComboToSettings(NetworkPreferenceCombo, settings);
+        return settings;
+    }
+
+    private void PersistNetworkSettingsFromUi()
+    {
+        if (!_networkUiReady)
+            return;
+
+        var settings = HostSettingsStore.Load();
+        HostNetworkUiHelper.ApplyComboSelectionToSettings(NetworkAdapterCombo, settings);
+        HostNetworkUiHelper.ApplyPreferenceComboToSettings(NetworkPreferenceCombo, settings);
+        HostSettingsStore.Save(settings);
+        UpdateNetworkPreview();
+    }
+
+    private void UpdateNetworkPreview()
+    {
+        if (!AppHostContext.Server.IsRunning)
+        {
+            var port = (int)PortBox.Value;
+            var settings = ReadNetworkSettingsFromUi();
+            ChildUrlText.Text = HostNetworkService.FormatChildUrlForDisplay(port, settings);
+        }
+    }
+
+    private void OnNetworkSettingChanged(object sender, SelectionChangedEventArgs e)
+    {
+        PersistNetworkSettingsFromUi();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -103,6 +151,7 @@ public sealed partial class MainPage : Page
         CompanelButton.IsEnabled = running;
         DisplayToggleButton.IsEnabled = running && !_displayToggleBusy;
         PortBox.IsEnabled = !running;
+        HostNetworkUiHelper.SetNetworkControlsEnabled(running, NetworkAdapterCombo, NetworkPreferenceCombo);
 
         SeatsPanel.Visibility = running ? Visibility.Visible : Visibility.Collapsed;
         EmptyHintText.Visibility = running ? Visibility.Collapsed : Visibility.Visible;
@@ -123,14 +172,18 @@ public sealed partial class MainPage : Page
             _seatPollTimer.Stop();
             UpdateSeatCells(Array.Empty<SeatStatusEntry>());
             UpdateDisplayToggleLabel();
+            UpdateNetworkPreview();
             return;
         }
 
-        var url = AppHostContext.Server.BaseUrl;
+        var childUrl = AppHostContext.Server.ChildBaseUrl;
         SetStatusInfoBar(InfoBarSeverity.Success, "サーバー稼働中", null);
         UrlPanel.Visibility = Visibility.Visible;
-        ChildUrlText.Text = url;
-        CompanelUrlText.Text = $"{url} (WinUI)";
+        ChildUrlText.Text = string.IsNullOrWhiteSpace(childUrl)
+            ? "（LAN IP 未検出）"
+            : childUrl;
+        CompanelUrlText.Text = "このPC内（WinUI コンパネ）";
+        CopyChildUrlButton.IsEnabled = !string.IsNullOrWhiteSpace(childUrl);
 
         var displayStatus = AppHostContext.DisplayOutput.StatusText;
         if (string.IsNullOrWhiteSpace(displayStatus))
@@ -197,7 +250,7 @@ public sealed partial class MainPage : Page
         _seatPollInFlight = true;
         try
         {
-            var seats = await HostApiService.GetSeatsStatusAsync(AppHostContext.Server.BaseUrl);
+            var seats = await HostApiService.GetSeatsStatusAsync(AppHostContext.Server.LocalBaseUrl);
             var connected = seats.Count(s => s.Connected);
             var summary = $"接続 {connected} / 10　（3秒ごとに更新）";
             var updated = $"最終更新: {DateTime.Now:HH:mm:ss}";
@@ -278,8 +331,13 @@ public sealed partial class MainPage : Page
         try
         {
             var port = (int)PortBox.Value;
-            var useSeatNames = HostSettingsStore.Load().UseSeatNameFile;
-            await AppHostContext.Server.StartAsync(ContentRootResolver.Resolve(), port, useSeatNames);
+            var settings = ReadNetworkSettingsFromUi();
+            HostSettingsStore.Save(settings);
+            await AppHostContext.Server.StartAsync(
+                ContentRootResolver.Resolve(),
+                port,
+                settings,
+                settings.UseSeatNameFile);
             RefreshUi();
         }
         catch (Exception ex)
@@ -347,5 +405,16 @@ public sealed partial class MainPage : Page
         if (App.HostWindow is not null)
             await App.HostWindow.ShowBusyOverlayAsync("サーバー接続中...");
         Frame?.Navigate(typeof(CompanelPage));
+    }
+
+    private void OnCopyChildUrlClick(object sender, RoutedEventArgs e)
+    {
+        var text = ChildUrlText.Text?.Trim();
+        if (string.IsNullOrWhiteSpace(text) || text.StartsWith('（'))
+            return;
+
+        var package = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
+        package.SetText(text);
+        Clipboard.SetContent(package);
     }
 }

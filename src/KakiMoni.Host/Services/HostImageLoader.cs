@@ -49,7 +49,7 @@ public sealed class HostImageLoader
         if (!AppHostContext.Server.IsRunning)
             return false;
 
-        absoluteUrl = AppHostContext.Server.BaseUrl.TrimEnd('/') + urlOrRelative;
+        absoluteUrl = AppHostContext.Server.LocalBaseUrl.TrimEnd('/') + urlOrRelative;
         return true;
     }
 

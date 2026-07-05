@@ -1,4 +1,12 @@
+using KakiMoni.Core.Network;
+
 namespace KakiMoni_Host.Services;
+
+public enum HostNetworkMode
+{
+    Auto,
+    Manual
+}
 
 public sealed class HostSettings
 {
@@ -13,4 +21,10 @@ public sealed class HostSettings
 
     /// <summary>assets/seat-names.txt から席名を読み込む。</summary>
     public bool UseSeatNameFile { get; set; }
+
+    public HostNetworkMode NetworkMode { get; set; } = HostNetworkMode.Auto;
+
+    public LanAddressPreference NetworkPreference { get; set; } = LanAddressPreference.FirstFound;
+
+    public string? ManualNetworkAddress { get; set; }
 }
