@@ -2,33 +2,33 @@
 description: WinUI 第2ウィンドウのフルスクリーン・ボーダーレス（DWM白枠対策）
 globs: "**/*Window*.xaml,**/*Window*.xaml.cs,**/MonitorHelper.cs,**/ClientWindowLayout.cs,**/DisplayOutput*.cs"
 alwaysApply: false
+pairedWith: docs/WINUI_SECOND_WINDOW.md
 ---
 
 # WinUI 第2ウィンドウ・フルスクリーン
 
-## フルスクリーン ON
+## フルスクリーン ON（確定）
 
-**`MoveAndResize` / `OverlappedPresenter` と Win32 `WS_POPUP` を同時に使わない。**
+**WinUI の `MoveAndResize` / `OverlappedPresenter` と Win32 `WS_POPUP` を同時に使わない。**
 
 ```
-1. フルスクリーン時 … タイトルバー折りたたみ等のみ（Presenter 枠消しは避ける）
-2. AppWindow.Show()
-3. Win32 のみ … ApplyWin32Borderless(WS_POPUP) + SetWindowPos（全面）
-4. ExpandBounds(+2px) で DWM 枠を画面外へ（任意）
+Show:
+  1. フルスクリーン時 … タイトルバー折りたたみ等のみ（Presenter 枠消しは避ける）
+  2. AppWindow.Show()
+  3. Win32 のみ … WS_POPUP + SetWindowPos（モニター全面）
+  4. 必要なら ExpandBounds(+2px) で DWM 枠を画面外へ
 ```
 
-フルスクリーン OFF … `MoveAndResize` → 最後に Win32 仕上げで可。
+フルスクリーン OFF + 自動配置 … `MoveAndResize` → 最後に Win32 仕上げで可。
 
 ## 禁止
 
 - フルスクリーン時の `AppWindow.MoveAndResize`
-- Win32 適用後の `MoveAndResize` ループ
-- `DwmExtendFrameIntoClientArea` + 不透明背景
-- コンテンツ Scale で OS 枠を隠す（効かない）
+- Win32 適用後に `MoveAndResize` をループで再実行
+- `DwmExtendFrameIntoClientArea` + 不透明背景（白 1px 枠の原因になりうる）
+- コンテンツ `ScaleTransform` で OS 枠を隠そうとする（効かない）
 
 ## ロゴ / ミラー
 
-- cover: `Border` + `ImageBrush` UniformToFill
-- ミラー clear: Transparent
-
-詳細: cursor-playbook `docs/WINUI_SECOND_WINDOW.md`
+- cover は `Border` + `ImageBrush`（`UniformToFill`）が扱いやすい
+- ミラー描画のクリア色は **Transparent**（白はレターボックスに見える）

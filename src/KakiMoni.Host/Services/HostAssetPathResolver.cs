@@ -34,19 +34,41 @@ internal static class HostAssetPathResolver
             if (!path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            var encodedName = path[prefix.Length..].TrimStart('/');
-            if (string.IsNullOrWhiteSpace(encodedName))
+            var relativePart = path[prefix.Length..].TrimStart('/');
+            if (string.IsNullOrWhiteSpace(relativePart))
                 return false;
 
-            var fileName = Path.GetFileName(Uri.UnescapeDataString(encodedName));
-            if (string.IsNullOrWhiteSpace(fileName)
-                || fileName.Contains("..", StringComparison.Ordinal))
+            var decodedRelative = Uri.UnescapeDataString(relativePart).Replace('\\', '/');
+            if (decodedRelative.Contains("..", StringComparison.Ordinal))
                 return false;
 
-            localPath = Path.Combine(ContentRootResolver.AssetsPath, folder, fileName);
-            return File.Exists(localPath);
+            var assetsRoot = Path.GetFullPath(Path.Combine(ContentRootResolver.AssetsPath, folder));
+            var candidate = Path.GetFullPath(Path.Combine(
+                assetsRoot,
+                decodedRelative.Replace('/', Path.DirectorySeparatorChar)));
+
+            if (!IsUnderDirectory(candidate, assetsRoot))
+                return false;
+
+            if (!File.Exists(candidate))
+                return false;
+
+            localPath = candidate;
+            return true;
         }
 
         return false;
+    }
+
+    private static bool IsUnderDirectory(string candidate, string root)
+    {
+        if (!candidate.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (candidate.Length == root.Length)
+            return true;
+
+        var next = candidate[root.Length];
+        return next == Path.DirectorySeparatorChar || next == Path.AltDirectorySeparatorChar;
     }
 }

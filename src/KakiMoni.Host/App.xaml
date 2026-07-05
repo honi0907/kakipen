@@ -15,6 +15,10 @@
             <SolidColorBrush x:Key="CompanelMutedTextBrush" Color="#94a3b8" />
             <SolidColorBrush x:Key="CompanelTitleBrush" Color="#a78bfa" />
 
+            <SolidColorBrush x:Key="LayoutSidebarTextBrush" Color="#e2e8f0" />
+            <SolidColorBrush x:Key="LayoutSidebarMutedBrush" Color="#94a3b8" />
+            <SolidColorBrush x:Key="LayoutSidebarHintBrush" Color="#cbd5e1" />
+
             <Style x:Key="GlobalActionButtonStyle" TargetType="Button">
                 <Setter Property="Width" Value="72" />
                 <Setter Property="Height" Value="72" />

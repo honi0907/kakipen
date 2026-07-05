@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Window
+    x:Class="KakiMoni_Host.SaveViewer.SaveViewerWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="保存データ一覧">
+
+    <Grid x:Name="RootGrid"
+          Background="#09111f"
+          Padding="12"
+          RequestedTheme="Dark">
+        <Grid.Resources>
+            <SolidColorBrush x:Key="SvTextBrush" Color="#e8f0fc" />
+            <SolidColorBrush x:Key="SvMutedBrush" Color="#b8c9e6" />
+            <SolidColorBrush x:Key="SvFieldBgBrush" Color="#152238" />
+            <SolidColorBrush x:Key="SvFieldBorderBrush" Color="#3d5f84" />
+            <SolidColorBrush x:Key="SvPanelBgBrush" Color="#0c1626" />
+            <SolidColorBrush x:Key="SvPanelBorderBrush" Color="#27415f" />
+
+            <Style x:Key="SvToolbarButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="#1b2c47" />
+                <Setter Property="Foreground" Value="{StaticResource SvTextBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource SvFieldBorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Padding" Value="12,8" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="FontSize" Value="13" />
+            </Style>
+
+            <Style x:Key="SvPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource SvToolbarButtonStyle}">
+                <Setter Property="Background" Value="#2179ef" />
+                <Setter Property="BorderBrush" Value="#5aa7ff" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+            </Style>
+
+            <Style x:Key="SvNumberBoxStyle" TargetType="NumberBox">
+                <Setter Property="Background" Value="{StaticResource SvFieldBgBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource SvTextBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource SvFieldBorderBrush}" />
+                <Setter Property="SelectionHighlightColor" Value="#3f98fb" />
+                <Setter Property="SpinButtonPlacementMode" Value="Hidden" />
+                <Setter Property="Padding" Value="8,4,8,4" />
+            </Style>
+
+            <Style x:Key="SvTextBoxStyle" TargetType="TextBox">
+                <Setter Property="Background" Value="{StaticResource SvFieldBgBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource SvTextBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource SvFieldBorderBrush}" />
+                <Setter Property="PlaceholderForeground" Value="#8fa3c4" />
+                <Setter Property="SelectionHighlightColor" Value="#3f98fb" />
+            </Style>
+
+            <Style x:Key="SvCheckBoxStyle" TargetType="CheckBox">
+                <Setter Property="Foreground" Value="{StaticResource SvTextBrush}" />
+                <Setter Property="FontSize" Value="13" />
+            </Style>
+
+            <Style x:Key="SvIdChipCheckBoxStyle" TargetType="CheckBox" BasedOn="{StaticResource SvCheckBoxStyle}">
+                <Setter Property="Padding" Value="2,0" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+                <Setter Property="MinHeight" Value="28" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+            </Style>
+
+            <Style x:Key="SvIdChipBorderStyle" TargetType="Border">
+                <Setter Property="Background" Value="{StaticResource SvFieldBgBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource SvFieldBorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="Padding" Value="6,4" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+            </Style>
+
+            <Style x:Key="SvFieldGroupStyle" TargetType="Border">
+                <Setter Property="Background" Value="{StaticResource SvFieldBgBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource SvFieldBorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="Padding" Value="10,6" />
+            </Style>
+
+            <Style x:Key="SvLabelTextStyle" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{StaticResource SvMutedBrush}" />
+                <Setter Property="FontSize" Value="13" />
+            </Style>
+        </Grid.Resources>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border x:Name="ToolbarPanel"
+                Grid.Row="0"
+                Margin="0,0,0,10"
+                Padding="14"
+                Background="{StaticResource SvPanelBgBrush}"
+                BorderBrush="{StaticResource SvPanelBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="12">
+            <StackPanel Spacing="12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="保存データ一覧"
+                                   Foreground="{StaticResource SvTextBrush}"
+                                   FontSize="18"
+                                   FontWeight="SemiBold" />
+                        <TextBlock Text="親機サーバーから saves 画像を取得して表示します"
+                                   Style="{StaticResource SvLabelTextStyle}" />
+                        <TextBlock x:Name="VersionText"
+                                   Style="{StaticResource SvLabelTextStyle}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                Spacing="8"
+                                VerticalAlignment="Center">
+                        <Button x:Name="RefreshButton"
+                                Content="再読込"
+                                Style="{StaticResource SvPrimaryButtonStyle}"
+                                Click="OnRefreshClick" />
+                        <Button x:Name="HideToolbarButton"
+                                Content="ツールバー最小化"
+                                Style="{StaticResource SvToolbarButtonStyle}"
+                                Click="OnHideToolbarClick" />
+                        <Button Content="全選択"
+                                Style="{StaticResource SvToolbarButtonStyle}"
+                                Click="OnSelectAllClick" />
+                        <Button Content="全解除"
+                                Style="{StaticResource SvToolbarButtonStyle}"
+                                Click="OnSelectNoneClick" />
+                    </StackPanel>
+                </Grid>
+
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="UpdateStatusText"
+                               Style="{StaticResource SvLabelTextStyle}"
+                               VerticalAlignment="Center"
+                               Text="未確認"
+                               TextWrapping="WrapWholeWords" />
+                    <Button Grid.Column="1"
+                            x:Name="OnlineUpdateButton"
+                            Content="保存一覧をオンライン更新"
+                            Style="{StaticResource SvToolbarButtonStyle}"
+                            Click="OnOnlineUpdateClick" />
+                </Grid>
+
+                <Grid x:Name="ServerUrlPanel" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="サーバー URL"
+                               Style="{StaticResource SvLabelTextStyle}"
+                               VerticalAlignment="Center" />
+                    <TextBox x:Name="ServerUrlBox"
+                             Grid.Column="1"
+                             Style="{StaticResource SvTextBoxStyle}"
+                             PlaceholderText="http://192.168.1.10:3000"
+                             KeyDown="OnServerUrlKeyDown" />
+                    <Button Grid.Column="2"
+                            Content="接続"
+                            Style="{StaticResource SvPrimaryButtonStyle}"
+                            Click="OnServerConnectClick" />
+                </Grid>
+
+                <Grid x:Name="IdChipGrid"
+                      ColumnSpacing="8"
+                      RowSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                </Grid>
+
+                <StackPanel Orientation="Horizontal"
+                            Spacing="20"
+                            VerticalAlignment="Center">
+                    <Border Style="{StaticResource SvFieldGroupStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <TextBlock Text="1IDあたり"
+                                       Style="{StaticResource SvLabelTextStyle}"
+                                       MinWidth="64"
+                                       VerticalAlignment="Center" />
+                            <NumberBox x:Name="MaxPerSeatBox"
+                                       Style="{StaticResource SvNumberBoxStyle}"
+                                       Width="72"
+                                       Minimum="1"
+                                       Maximum="500"
+                                       Value="120"
+                                       ValueChanged="OnMaxPerSeatChanged" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource SvFieldGroupStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <TextBlock Text="サムネ px"
+                                       Style="{StaticResource SvLabelTextStyle}"
+                                       MinWidth="64"
+                                       VerticalAlignment="Center" />
+                            <NumberBox x:Name="ThumbSizeBox"
+                                       Style="{StaticResource SvNumberBoxStyle}"
+                                       Width="72"
+                                       Minimum="60"
+                                       Maximum="220"
+                                       Value="96"
+                                       ValueChanged="OnThumbSizeChanged" />
+                        </StackPanel>
+                    </Border>
+                    <CheckBox x:Name="LiveUpdateCheckBox"
+                              Content="新規保存を即時反映"
+                              Style="{StaticResource SvCheckBoxStyle}"
+                              Checked="OnLiveUpdateChanged"
+                              Unchecked="OnLiveUpdateChanged" />
+                    <CheckBox x:Name="HideDisconnectedCheckBox"
+                              Content="接続中のみ表示"
+                              Style="{StaticResource SvCheckBoxStyle}"
+                              Checked="OnHideDisconnectedChanged"
+                              Unchecked="OnHideDisconnectedChanged" />
+                    <CheckBox x:Name="ShowFileNameCheckBox"
+                              Content="保存名"
+                              Style="{StaticResource SvCheckBoxStyle}"
+                              Checked="OnMetaVisibilityChanged"
+                              Unchecked="OnMetaVisibilityChanged" />
+                    <CheckBox x:Name="ShowUpdatedCheckBox"
+                              Content="日付"
+                              Style="{StaticResource SvCheckBoxStyle}"
+                              Checked="OnMetaVisibilityChanged"
+                              Unchecked="OnMetaVisibilityChanged" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <StackPanel Spacing="4" Width="188">
+                        <TextBlock Text="上段ID"
+                                   Style="{StaticResource SvLabelTextStyle}" />
+                        <TextBox x:Name="LayoutTopBox"
+                                 Style="{StaticResource SvTextBoxStyle}"
+                                 Text="1,2,3,4,5"
+                                 TextChanged="OnLayoutTextChanged" />
+                    </StackPanel>
+                    <StackPanel Spacing="4" Width="188">
+                        <TextBlock Text="下段ID"
+                                   Style="{StaticResource SvLabelTextStyle}" />
+                        <TextBox x:Name="LayoutBottomBox"
+                                 Style="{StaticResource SvTextBoxStyle}"
+                                 Text="6,7,8,9,10"
+                                 TextChanged="OnLayoutTextChanged" />
+                    </StackPanel>
+                    <Button Content="行配置を適用"
+                            Style="{StaticResource SvToolbarButtonStyle}"
+                            VerticalAlignment="Bottom"
+                            Click="OnApplyLayoutClick" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Spacing="20">
+                    <TextBlock x:Name="SummaryText"
+                               Foreground="#9ae6b4"
+                               FontSize="14"
+                               Text="合計表示件数: 0" />
+                    <TextBlock x:Name="StatusText"
+                               Foreground="#fde68a"
+                               FontSize="14"
+                               Text="準備完了" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <Button x:Name="ShowToolbarFab"
+                Grid.Row="0"
+                Width="38"
+                Height="38"
+                Margin="0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top"
+                Background="{StaticResource SvPanelBgBrush}"
+                Foreground="{StaticResource SvTextBrush}"
+                BorderBrush="{StaticResource SvPanelBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="19"
+                Content="表示"
+                Visibility="Collapsed"
+                Click="OnShowToolbarClick" />
+
+        <Grid Grid.Row="1"
+              x:Name="GalleryHost"
+              RowSpacing="10" />
+    </Grid>
+</Window>

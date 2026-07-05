@@ -8,25 +8,34 @@ namespace KakiMoni.Server.Hubs;
 public sealed class GameHub : Hub
 {
     private const string HostsGroup = "hosts";
+    private const string LayoutControllersGroup = "layout-controllers";
     private readonly SeatStateManager _seats;
     private readonly DisplayConnectionManager _displays;
     private readonly BackgroundFileService _backgrounds;
     private readonly OverlayFileService _overlays;
     private readonly GameSessionState _session;
+    private readonly SeatNameFileService _seatNames;
+    private readonly LayoutDisplayLayoutManager _layoutLayouts;
 
     public GameHub(
         SeatStateManager seats,
         DisplayConnectionManager displays,
         BackgroundFileService backgrounds,
         OverlayFileService overlays,
-        GameSessionState session)
+        GameSessionState session,
+        SeatNameFileService seatNames,
+        LayoutDisplayLayoutManager layoutLayouts)
     {
         _seats = seats;
         _displays = displays;
         _backgrounds = backgrounds;
         _overlays = overlays;
         _session = session;
+        _seatNames = seatNames;
+        _layoutLayouts = layoutLayouts;
     }
+
+    private IClientProxy HostAndLayoutClients => Clients.Groups(HostsGroup, LayoutControllersGroup);
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
@@ -41,8 +50,8 @@ public sealed class GameHub : Hub
         _seats.OnDisconnected(Context.ConnectionId);
         if (seatId is not null)
         {
-            await Clients.Group(HostsGroup).SendAsync(HostCallbacks.ClientDisconnected, seatId.Value);
-            await Clients.Group(HostsGroup).SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
+            await HostAndLayoutClients.SendAsync(HostCallbacks.ClientDisconnected, seatId.Value);
+            await HostAndLayoutClients.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
         }
 
         await base.OnDisconnectedAsync(exception);
@@ -53,6 +62,28 @@ public sealed class GameHub : Hub
         await Groups.AddToGroupAsync(Context.ConnectionId, HostsGroup);
         await Clients.Caller.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
         await Clients.Caller.SendAsync(HostCallbacks.ChoiceChanged, _session.CurrentChoiceUrl ?? string.Empty);
+    }
+
+    public async Task RegisterLayoutController()
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, LayoutControllersGroup);
+        await Clients.Caller.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
+        await Clients.Caller.SendAsync(HostCallbacks.ChoiceChanged, _session.CurrentChoiceUrl ?? string.Empty);
+        foreach (var slot in LayoutDisplaySlots.All)
+        {
+            if (_layoutLayouts.Get(slot) is { } layout)
+                await Clients.Caller.SendAsync(LayoutCallbacks.DisplayLayoutChanged, slot, layout);
+        }
+    }
+
+    public async Task PushDisplayLayout(string group, HostDisplayLayout layout)
+    {
+        if (!LayoutDisplaySlots.IsValid(group))
+            return;
+
+        var groupId = group.Trim();
+        _layoutLayouts.Set(groupId, layout);
+        await Clients.Group(LayoutControllersGroup).SendAsync(LayoutCallbacks.DisplayLayoutChanged, groupId, layout);
     }
 
     public async Task RegisterClient(int seatId, string? bgImageUrl)
@@ -79,8 +110,7 @@ public sealed class GameHub : Hub
             await Clients.Caller.SendAsync(ClientCallbacks.Lock);
         if (!string.IsNullOrWhiteSpace(seat.BgImageUrl))
             await Clients.Caller.SendAsync(ClientCallbacks.BackgroundChanged, seat.BgImageUrl);
-        if (!string.IsNullOrWhiteSpace(seat.Name))
-            await Clients.Caller.SendAsync(ClientCallbacks.NameAssigned, seat.Name);
+        await Clients.Caller.SendAsync(ClientCallbacks.NameAssigned, seat.Name ?? string.Empty);
         if (!string.IsNullOrWhiteSpace(_session.CurrentChoiceUrl))
             await Clients.Caller.SendAsync(ClientCallbacks.ShowChoice, _session.CurrentChoiceUrl);
         if (!string.IsNullOrWhiteSpace(seat.OverlayImageUrl))
@@ -93,8 +123,8 @@ public sealed class GameHub : Hub
         await Clients.Caller.SendAsync(ClientCallbacks.JudgeColorMode, _session.JudgeColorMode);
         await Clients.Caller.SendAsync(ClientCallbacks.LockOverlayOpacity, _session.LockOverlayOpacityPercent);
 
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.ClientRegistered, seatId);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
+        await HostAndLayoutClients.SendAsync(HostCallbacks.ClientRegistered, seatId);
+        await HostAndLayoutClients.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
     }
 
     public async Task RegisterClientDisplay(int seatId)
@@ -143,6 +173,23 @@ public sealed class GameHub : Hub
         await Clients.All.SendAsync(ClientCallbacks.LockOverlayOpacity, _session.LockOverlayOpacityPercent);
     }
 
+    public async Task HostSetUseSeatNameFile(bool enabled)
+    {
+        _session.UseSeatNameFile = enabled;
+        _seats.RefreshSeatNames(enabled, _seatNames);
+
+        foreach (var seat in _seats.GetConnectedSeats())
+        {
+            if (string.IsNullOrEmpty(seat.ConnectionId))
+                continue;
+
+            await Clients.Client(seat.ConnectionId)
+                .SendAsync(ClientCallbacks.NameAssigned, seat.Name ?? string.Empty);
+        }
+
+        await HostAndLayoutClients.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
+    }
+
     public async Task HostShowChoice(string choiceImageUrl)
     {
         _session.CurrentChoiceUrl = string.IsNullOrWhiteSpace(choiceImageUrl) ? null : choiceImageUrl.Trim();
@@ -164,7 +211,7 @@ public sealed class GameHub : Hub
                 await Clients.Client(seat.ConnectionId!).SendAsync(ClientCallbacks.ClearChoice);
             foreach (var seatId in GetConnectedDisplaySeatIds())
                 await SendToDisplayAsync(seatId, ClientCallbacks.ClearChoice);
-            await Clients.Group(HostsGroup).SendAsync(HostCallbacks.ChoiceChanged, string.Empty);
+            await HostAndLayoutClients.SendAsync(HostCallbacks.ChoiceChanged, string.Empty);
             return;
         }
 
@@ -172,7 +219,7 @@ public sealed class GameHub : Hub
             await Clients.Client(seat.ConnectionId!).SendAsync(ClientCallbacks.ShowChoice, url);
         foreach (var seatId in GetConnectedDisplaySeatIds())
             await SendToDisplayAsync(seatId, ClientCallbacks.ShowChoice, url);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.ChoiceChanged, url);
+        await HostAndLayoutClients.SendAsync(HostCallbacks.ChoiceChanged, url);
     }
 
     public async Task HostReveal(int seatId, string? animType)
@@ -183,8 +230,8 @@ public sealed class GameHub : Hub
         var seat = _seats.GetSeat(seatId);
         if (!string.IsNullOrEmpty(seat?.ConnectionId))
             await Clients.Client(seat.ConnectionId).SendAsync(ClientCallbacks.Reveal, anim);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.SeatRevealed, seatId, anim);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
+        await HostAndLayoutClients.SendAsync(HostCallbacks.SeatRevealed, seatId, anim);
+        await HostAndLayoutClients.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
     }
 
     public async Task HostHide(int seatId)
@@ -194,8 +241,8 @@ public sealed class GameHub : Hub
         var seat = _seats.GetSeat(seatId);
         if (!string.IsNullOrEmpty(seat?.ConnectionId))
             await Clients.Client(seat.ConnectionId).SendAsync(ClientCallbacks.Hide);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.SeatHidden, seatId);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
+        await HostAndLayoutClients.SendAsync(HostCallbacks.SeatHidden, seatId);
+        await HostAndLayoutClients.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
     }
 
     public async Task HostJudge(int seatId, string kind, string? imageUrl)
@@ -207,8 +254,8 @@ public sealed class GameHub : Hub
         if (!string.IsNullOrEmpty(seat?.ConnectionId))
             await Clients.Client(seat.ConnectionId).SendAsync(ClientCallbacks.ShowOverlay, resolved);
         await SendToDisplayAsync(seatId, ClientCallbacks.ShowOverlay, resolved);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.JudgeResult, seatId, resolved);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
+        await HostAndLayoutClients.SendAsync(HostCallbacks.JudgeResult, seatId, resolved);
+        await HostAndLayoutClients.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
     }
 
     public async Task HostClearOverlay()
@@ -222,7 +269,7 @@ public sealed class GameHub : Hub
             await SendToDisplayAsync(seatId, ClientCallbacks.ClearOverlay);
         }
 
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
+        await HostAndLayoutClients.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
     }
 
     /// <summary>描画・判定・選択肢を全席一括クリア（スタンバイ）。外部出力はロゴ表示に戻す。</summary>
@@ -251,8 +298,8 @@ public sealed class GameHub : Hub
             await SendToDisplayAsync(seatId, ClientCallbacks.Hide);
         }
 
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.ChoiceChanged, string.Empty);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
+        await HostAndLayoutClients.SendAsync(HostCallbacks.ChoiceChanged, string.Empty);
+        await HostAndLayoutClients.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
     }
 
     public async Task HostSetWritingBlackout(int seatId, bool enabled)
@@ -263,8 +310,8 @@ public sealed class GameHub : Hub
         if (!string.IsNullOrEmpty(seat?.ConnectionId))
             await Clients.Client(seat.ConnectionId).SendAsync(ClientCallbacks.WritingBlackout, enabled);
 
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.SeatWritingBlackout, seatId, enabled);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
+        await HostAndLayoutClients.SendAsync(HostCallbacks.SeatWritingBlackout, seatId, enabled);
+        await HostAndLayoutClients.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
     }
 
     public async Task ClientBackgroundChanged(string bgImageUrl)
@@ -274,7 +321,7 @@ public sealed class GameHub : Hub
 
         _seats.SetBackground(seatId.Value, bgImageUrl);
         await SendToDisplayAsync(seatId.Value, ClientCallbacks.BackgroundChanged, bgImageUrl);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
+        await HostAndLayoutClients.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
     }
 
     public async Task StrokeStart(StrokeData stroke)
@@ -284,7 +331,7 @@ public sealed class GameHub : Hub
         if (!_seats.TryBeginStroke(seatId.Value, stroke, out _))
             return;
 
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.StrokeStart, seatId.Value, stroke);
+        await HostAndLayoutClients.SendAsync(HostCallbacks.StrokeStart, seatId.Value, stroke);
         await SendToDisplayAsync(seatId.Value, ClientCallbacks.StrokeStart, stroke);
     }
 
@@ -295,7 +342,7 @@ public sealed class GameHub : Hub
         if (!_seats.TryAddPoint(seatId.Value, point))
             return;
 
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.StrokePoint, seatId.Value, point);
+        await HostAndLayoutClients.SendAsync(HostCallbacks.StrokePoint, seatId.Value, point);
         await SendToDisplayAsync(seatId.Value, ClientCallbacks.StrokePoint, point);
     }
 
@@ -306,11 +353,11 @@ public sealed class GameHub : Hub
         if (!_seats.TryEndStroke(seatId.Value, out _))
             return;
 
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.StrokeEnd, seatId.Value);
+        await HostAndLayoutClients.SendAsync(HostCallbacks.StrokeEnd, seatId.Value);
         await SendToDisplayAsync(seatId.Value, ClientCallbacks.StrokeEnd);
         var seat = _seats.GetSeat(seatId.Value);
         if (seat is not null)
-            await Clients.Group(HostsGroup).SendAsync(HostCallbacks.SeatStrokesUpdated, seatId.Value, seat.Strokes.ToList());
+            await HostAndLayoutClients.SendAsync(HostCallbacks.SeatStrokesUpdated, seatId.Value, seat.Strokes.ToList());
     }
 
     public async Task HostLock(int seatId)
@@ -319,8 +366,8 @@ public sealed class GameHub : Hub
         var seat = _seats.GetSeat(seatId);
         if (!string.IsNullOrEmpty(seat?.ConnectionId))
             await Clients.Client(seat.ConnectionId).SendAsync(ClientCallbacks.Lock);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.SeatLocked, seatId);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
+        await HostAndLayoutClients.SendAsync(HostCallbacks.SeatLocked, seatId);
+        await HostAndLayoutClients.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
     }
 
     public async Task HostUnlock(int seatId)
@@ -329,8 +376,8 @@ public sealed class GameHub : Hub
         var seat = _seats.GetSeat(seatId);
         if (!string.IsNullOrEmpty(seat?.ConnectionId))
             await Clients.Client(seat.ConnectionId).SendAsync(ClientCallbacks.Unlock);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.SeatUnlocked, seatId);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
+        await HostAndLayoutClients.SendAsync(HostCallbacks.SeatUnlocked, seatId);
+        await HostAndLayoutClients.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
     }
 
     public async Task HostLockAll()
@@ -338,8 +385,8 @@ public sealed class GameHub : Hub
         _seats.SetAllLocked(true);
         foreach (var seat in _seats.GetConnectedSeats())
             await Clients.Client(seat.ConnectionId!).SendAsync(ClientCallbacks.Lock);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.AllLocked);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
+        await HostAndLayoutClients.SendAsync(HostCallbacks.AllLocked);
+        await HostAndLayoutClients.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
     }
 
     public async Task HostUnlockAll()
@@ -347,8 +394,8 @@ public sealed class GameHub : Hub
         _seats.SetAllLocked(false);
         foreach (var seat in _seats.GetConnectedSeats())
             await Clients.Client(seat.ConnectionId!).SendAsync(ClientCallbacks.Unlock);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.AllUnlocked);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
+        await HostAndLayoutClients.SendAsync(HostCallbacks.AllUnlocked);
+        await HostAndLayoutClients.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
     }
 
     public async Task ClientConfirm()
@@ -360,8 +407,8 @@ public sealed class GameHub : Hub
         if (seat is null || seat.Locked) return;
 
         _seats.SetLocked(seatId.Value, true);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.SeatLocked, seatId.Value);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
+        await HostAndLayoutClients.SendAsync(HostCallbacks.SeatLocked, seatId.Value);
+        await HostAndLayoutClients.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
     }
 
     public async Task HostClear(int seatId)
@@ -371,8 +418,8 @@ public sealed class GameHub : Hub
         if (!string.IsNullOrEmpty(seat?.ConnectionId))
             await Clients.Client(seat.ConnectionId).SendAsync(ClientCallbacks.Clear);
         await SendToDisplayAsync(seatId, ClientCallbacks.ClearStrokesOnly);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.CanvasCleared, seatId);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
+        await HostAndLayoutClients.SendAsync(HostCallbacks.CanvasCleared, seatId);
+        await HostAndLayoutClients.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
     }
 
     public async Task HostClearStrokesOnly(int seatId)
@@ -382,8 +429,8 @@ public sealed class GameHub : Hub
         if (!string.IsNullOrEmpty(seat?.ConnectionId))
             await Clients.Client(seat.ConnectionId).SendAsync(ClientCallbacks.ClearStrokesOnly);
         await SendToDisplayAsync(seatId, ClientCallbacks.ClearStrokesOnly);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.CanvasCleared, seatId);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
+        await HostAndLayoutClients.SendAsync(HostCallbacks.CanvasCleared, seatId);
+        await HostAndLayoutClients.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
     }
 
     public async Task ClearCanvas()
@@ -396,8 +443,8 @@ public sealed class GameHub : Hub
         _seats.ClearStrokes(seatId.Value);
         await Clients.Caller.SendAsync(ClientCallbacks.ClearStrokesOnly);
         await SendToDisplayAsync(seatId.Value, ClientCallbacks.ClearStrokesOnly);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.CanvasCleared, seatId.Value);
-        await Clients.Group(HostsGroup).SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
+        await HostAndLayoutClients.SendAsync(HostCallbacks.CanvasCleared, seatId.Value);
+        await HostAndLayoutClients.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
     }
 
     private IEnumerable<int> GetConnectedDisplaySeatIds()

@@ -36,7 +36,16 @@ WinUI 3 + .NET 8。`kakimoni-all` は参照のみ（変更しない）。
 - サーバー `RegisterClientDisplay` は使わず、**書き画面から `PublishMirror`**
 - GO: `ClientHubService` Reveal/Hide → `SetCoverRevealed`
 
+## 外部出力（親機）
+
+- `HostDisplayOutputService` + `HostDisplayWindow`（第2ウィンドウ・フリーレイアウト）
+- レイアウト編集: コンパネ「レイアウト」→ `LayoutEditorWindow`（別ウィンドウ）
+- ON/OFF: ランチャー「外部出力」ボタン
+- 描画データは `SeatCardModel` をコンパネと共有（in-process、サーバー同期なし）
+- レイアウト保存: `%LocalAppData%/KakiMoni/host-display-layout.json`
+
 ## アセット
 
 - 背景: `assets/backgrounds/`（席 ID 自動: `BG_ID1.png` 等）
 - オーバーレイ: `assets/overlays/`、ロゴ: `assets/logo/`
+- 席名: `assets/seat-names.txt`（1行目=席1…。コンパネ設定「テキストネームを読み込む」で ON/OFF）

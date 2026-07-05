@@ -12,9 +12,9 @@ public sealed class ServerHostService
 
     public event EventHandler? StateChanged;
 
-    public async Task StartAsync(string contentRoot, int port, CancellationToken cancellationToken = default)
+    public async Task StartAsync(string contentRoot, int port, bool useSeatNameFile = false, CancellationToken cancellationToken = default)
     {
-        await _bootstrap.StartAsync(contentRoot, port, cancellationToken);
+        await _bootstrap.StartAsync(contentRoot, port, useSeatNameFile, cancellationToken);
         _baseUrl = $"http://localhost:{port}";
         StateChanged?.Invoke(this, EventArgs.Empty);
     }

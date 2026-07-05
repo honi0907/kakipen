@@ -157,6 +157,9 @@ public sealed class HostHubService : IAsyncDisposable
         return _connection.InvokeAsync("HostSetLockOverlayOpacity", percent);
     }
 
+    public Task HostSetUseSeatNameFileAsync(bool enabled) =>
+        InvokeWhenConnected("HostSetUseSeatNameFile", enabled);
+
     private Task InvokeWhenConnected(string method, bool arg)
     {
         if (_connection is null || _connection.State != HubConnectionState.Connected)

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Application
+    x:Class="KakiMoni_Layout.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+            </ResourceDictionary.MergedDictionaries>
+            <SolidColorBrush x:Key="LayoutSidebarTextBrush" Color="#e2e8f0" />
+            <SolidColorBrush x:Key="LayoutSidebarMutedBrush" Color="#94a3b8" />
+            <SolidColorBrush x:Key="LayoutSidebarHintBrush" Color="#cbd5e1" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

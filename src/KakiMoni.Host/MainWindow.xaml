@@ -42,7 +42,8 @@
                               IsActive="True"
                               Width="40"
                               Height="40" />
-                <TextBlock Text="サーバー停止中..."
+                <TextBlock x:Name="OverlayMessageText"
+                           Text="サーバー停止中..."
                            Foreground="White"
                            FontSize="16"
                            HorizontalAlignment="Center" />

@@ -9,4 +9,7 @@ public sealed class GameSessionState
 
     /// <summary>子機ロックオーバーレイの不透明度（0–100）。</summary>
     public int LockOverlayOpacityPercent { get; set; } = 80;
+
+    /// <summary>assets/seat-names.txt から席名を読み込む。</summary>
+    public bool UseSeatNameFile { get; set; }
 }

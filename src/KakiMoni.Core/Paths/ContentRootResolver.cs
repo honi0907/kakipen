@@ -17,35 +17,22 @@ public static class ContentRootResolver
     /// </summary>
 
     public static string Resolve()
-
     {
-
         var dir = AppContext.BaseDirectory;
 
         while (!string.IsNullOrEmpty(dir))
-
         {
-
-            if (HasAssetsBackgrounds(dir))
-
+            var hasSln = File.Exists(Path.Combine(dir, "KakiMoni.WinUI.sln"));
+            if (hasSln && HasAssetsBackgrounds(dir))
                 return dir;
 
-
-
-            if (File.Exists(Path.Combine(dir, "KakiMoni.WinUI.sln")) && HasAssetsDir(dir))
-
+            if (HasAssetsBackgrounds(dir) && !IsAppOutputDirectory(dir))
                 return dir;
-
-
 
             dir = Directory.GetParent(dir)?.FullName ?? string.Empty;
-
         }
 
-
-
         return AppContext.BaseDirectory;
-
     }
 
 
@@ -69,6 +56,10 @@ public static class ContentRootResolver
         return assets is not null && FindChildDir(assets, "backgrounds") is not null;
 
     }
+
+    private static bool IsAppOutputDirectory(string dir) =>
+        File.Exists(Path.Combine(dir, "KakiMoni.Host.dll"))
+        || File.Exists(Path.Combine(dir, "KakiMoni.Client.dll"));
 
 
 

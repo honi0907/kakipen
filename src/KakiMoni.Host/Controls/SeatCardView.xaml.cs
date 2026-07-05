@@ -1,5 +1,3 @@
-using KakiMoni.Core.Drawing;
-using KakiMoni.Core.Models;
 using KakiMoni_Host.Drawing;
 using KakiMoni_Host.Services;
 using Microsoft.Graphics.Canvas;
@@ -113,7 +111,8 @@ public sealed partial class SeatCardView : UserControl
             or nameof(SeatCardModel.IsReconnecting)
             or nameof(SeatCardModel.Status)
             or nameof(SeatCardModel.IsSelected)
-            or nameof(SeatCardModel.Revealed))
+            or nameof(SeatCardModel.Revealed)
+            or nameof(SeatCardModel.DisplayName))
             RequestPreviewRefresh();
 
         if (e.PropertyName is nameof(SeatCardModel.BgImageUrl))
@@ -208,7 +207,7 @@ public sealed partial class SeatCardView : UserControl
         var token = _overlayCts.Token;
 
         var fileName = Path.GetFileName(url.Trim('/').Split('/').LastOrDefault() ?? string.Empty);
-        var isFill = fileName.Contains("fill", StringComparison.OrdinalIgnoreCase);
+        var isFill = SeatPreviewRenderer.IsFillOverlayUrl(url);
 
         if (isFill)
         {
@@ -260,6 +259,7 @@ public sealed partial class SeatCardView : UserControl
         if (Model is null) return;
 
         SeatNumText.Text = Model.SeatId.ToString();
+        SeatNameText.Text = Model.DisplayName;
         if (Model.IsConnected)
         {
             StatusText.Text = Model.Status;
@@ -313,47 +313,14 @@ public sealed partial class SeatCardView : UserControl
         if (w <= 1 || h <= 1) return;
 
         session.Clear(Colors.Transparent);
-        if (Model is null || !Model.IsConnected) return;
-
-        var reference = Model.Strokes.FirstOrDefault() ?? Model.CurrentStroke;
-        var srcW = reference?.SrcW ?? 1600;
-        var srcH = reference?.SrcH ?? 900;
-        if (srcW <= 0) srcW = 1600;
-        if (srcH <= 0) srcH = 900;
-
-        var scale = Math.Min(w / (float)srcW, h / (float)srcH);
-        var ox = (w - (float)srcW * scale) * 0.5f;
-        var oy = (h - (float)srcH * scale) * 0.5f;
-
-        foreach (var stroke in Model.Strokes)
-            StrokeDrawHelper.DrawStroke(session, stroke, scale, ox, oy, ParseStrokeColor);
-        if (Model.CurrentStroke is not null)
-            StrokeDrawHelper.DrawStroke(session, Model.CurrentStroke, scale, ox, oy, ParseStrokeColor);
+        if (Model is null) return;
+        SeatPreviewRenderer.DrawStrokes(session, Model, w, h);
     }
 
-    private Color ParseStrokeColor(string hex)
-    {
-        var invert = HostSettingsStore.Load().JudgeColorMode
-            && ColorInvertHelper.IsFillOverlayUrl(Model?.OverlayImageUrl);
-        if (invert)
-            hex = ColorInvertHelper.InvertHex(hex);
-        return ParseColor(hex);
-    }
+    private Color ParseStrokeColor(string hex) =>
+        SeatPreviewRenderer.ParseStrokeColor(hex, Model);
 
-    private static Color ParseColor(string hex)
-    {
-        try
-        {
-            hex = hex.TrimStart('#');
-            if (hex.Length == 6)
-                return Color.FromArgb(255,
-                    Convert.ToByte(hex[..2], 16),
-                    Convert.ToByte(hex[2..4], 16),
-                    Convert.ToByte(hex[4..6], 16));
-        }
-        catch { }
-        return Colors.Black;
-    }
+    private static Color ParseColor(string hex) => SeatPreviewRenderer.ParseColor(hex);
 
     private void OnPreviewDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
     {

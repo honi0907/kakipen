@@ -61,11 +61,27 @@ public static class HostSettingsDialog
         lockOpacitySlider.ValueChanged += (_, _) => UpdateLockOpacityLabel();
         UpdateLockOpacityLabel();
 
+        var seatNameCheck = new CheckBox
+        {
+            Content = "テキストネームを読み込む",
+            IsChecked = settings.UseSeatNameFile,
+            Margin = new Thickness(0, 16, 0, 0)
+        };
+        var seatNameDesc = new TextBlock
+        {
+            Text = "ON のとき assets/seat-names.txt の1行目が席1…10行目が席10になります。OFF のときは ID 表示のみです。",
+            Opacity = 0.75,
+            TextWrapping = TextWrapping.WrapWholeWords,
+            Margin = new Thickness(0, 8, 0, 0)
+        };
+
         var panel = new StackPanel { Spacing = 4 };
         panel.Children.Add(standbyCheck);
         panel.Children.Add(standbyDesc);
         panel.Children.Add(judgeColorCheck);
         panel.Children.Add(judgeColorDesc);
+        panel.Children.Add(seatNameCheck);
+        panel.Children.Add(seatNameDesc);
         panel.Children.Add(lockOpacityLabel);
         panel.Children.Add(lockOpacitySlider);
         panel.Children.Add(lockOpacityDesc);
@@ -87,6 +103,7 @@ public static class HostSettingsDialog
         {
             StandbyUnlockAll = standbyCheck.IsChecked == true,
             JudgeColorMode = judgeColorCheck.IsChecked == true,
+            UseSeatNameFile = seatNameCheck.IsChecked == true,
             LockOverlayOpacityPercent = (int)lockOpacitySlider.Value
         });
         return true;

@@ -1,6 +1,8 @@
 using KakiMoni.Core.Drawing;
 using KakiMoni.Core.Models;
 using KakiMoni_Host.Controls;
+using KakiMoni_Host.Layout;
+using KakiMoni_Host.SaveViewer;
 using KakiMoni_Host.Services;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
@@ -94,37 +96,39 @@ public sealed partial class CompanelPage : Page
         SetGlobalControlsEnabled(AppHostContext.Server.IsRunning);
         UpdateSeatGridMetrics();
 
-        if (!AppHostContext.Server.IsRunning)
-        {
-            UpdateHubConnectionDot(false, false);
-            ConnBadgeText.Text = "未起動";
-            ConnText.Text = "サーバー未起動";
-            return;
-        }
-
-        _hub.FullStateReceived += OnFullState;
-        _hub.StrokeStartReceived += OnStrokeStart;
-        _hub.StrokePointReceived += OnStrokePoint;
-        _hub.StrokeEndReceived += OnStrokeEnd;
-        _hub.SeatLockedReceived += OnSeatLocked;
-        _hub.SeatUnlockedReceived += OnSeatUnlocked;
-        _hub.AllLockedReceived += OnAllLocked;
-        _hub.AllUnlockedReceived += OnAllUnlocked;
-        _hub.ClientDisconnectedReceived += OnClientDisconnected;
-        _hub.ClientRegisteredReceived += OnClientRegistered;
-        _hub.CanvasClearedReceived += OnCanvasCleared;
-        _hub.ChoiceChangedReceived += OnChoiceChanged;
-        _hub.SeatRevealedReceived += OnSeatRevealed;
-        _hub.SeatHiddenReceived += OnSeatHidden;
-        _hub.JudgeResultReceived += OnJudgeResult;
-        _hub.SeatWritingBlackoutReceived += OnSeatWritingBlackout;
-        _hub.ConnectionChanged += OnHubConnectionChanged;
-
         try
         {
+            if (!AppHostContext.Server.IsRunning)
+            {
+                UpdateHubConnectionDot(false, false);
+                ConnBadgeText.Text = "未起動";
+                ConnText.Text = "サーバー未起動";
+                return;
+            }
+
+            _hub.FullStateReceived += OnFullState;
+            _hub.StrokeStartReceived += OnStrokeStart;
+            _hub.StrokePointReceived += OnStrokePoint;
+            _hub.StrokeEndReceived += OnStrokeEnd;
+            _hub.SeatLockedReceived += OnSeatLocked;
+            _hub.SeatUnlockedReceived += OnSeatUnlocked;
+            _hub.AllLockedReceived += OnAllLocked;
+            _hub.AllUnlockedReceived += OnAllUnlocked;
+            _hub.ClientDisconnectedReceived += OnClientDisconnected;
+            _hub.ClientRegisteredReceived += OnClientRegistered;
+            _hub.CanvasClearedReceived += OnCanvasCleared;
+            _hub.ChoiceChangedReceived += OnChoiceChanged;
+            _hub.SeatRevealedReceived += OnSeatRevealed;
+            _hub.SeatHiddenReceived += OnSeatHidden;
+            _hub.JudgeResultReceived += OnJudgeResult;
+            _hub.SeatWritingBlackoutReceived += OnSeatWritingBlackout;
+            _hub.ConnectionChanged += OnHubConnectionChanged;
+
             await _hub.ConnectAsync(AppHostContext.Server.BaseUrl);
             await SyncJudgeColorModeAsync();
             await SyncLockOverlayOpacityAsync();
+            await SyncUseSeatNameFileAsync();
+            AppHostContext.DisplayOutput.BindSeats(_seats);
             ConnBadgeText.Text = "Hub接続済";
             ConnText.Text = string.Empty;
             RefreshLockAllButton();
@@ -139,10 +143,15 @@ public sealed partial class CompanelPage : Page
             ConnBadgeText.Text = "Hub切断";
             ConnText.Text = $"接続失敗: {ex.Message}";
         }
+        finally
+        {
+            App.HostWindow?.HideBusyOverlay();
+        }
     }
 
     private async void OnUnloaded(object sender, RoutedEventArgs e)
     {
+        App.HostWindow?.HideBusyOverlay();
         _hub.FullStateReceived -= OnFullState;
         _hub.StrokeStartReceived -= OnStrokeStart;
         _hub.StrokePointReceived -= OnStrokePoint;
@@ -172,7 +181,8 @@ public sealed partial class CompanelPage : Page
         ChoiceComboBox.IsEnabled = enabled;
         SendChoiceButton.IsEnabled = enabled;
         SettingsButton.IsEnabled = enabled;
-        ExitButton.IsEnabled = true;
+        LayoutButton.IsEnabled = enabled;
+        LauncherButton.IsEnabled = true;
     }
 
     private void UpdateUrlText()
@@ -348,7 +358,14 @@ public sealed partial class CompanelPage : Page
         }
     }
 
-    private void OnBackClick(object sender, RoutedEventArgs e) => Frame?.GoBack();
+    private void OnLauncherClick(object sender, RoutedEventArgs e)
+    {
+        CompanelWindowHelper.EnsureLauncherWindowSize(App.HostWindow);
+        if (Frame?.CanGoBack == true)
+            Frame.GoBack();
+        else
+            Frame?.Navigate(typeof(MainPage));
+    }
 
     private void OnBoardSeatSelectClicked(object? sender, int seatId)
     {
@@ -751,7 +768,22 @@ public sealed partial class CompanelPage : Page
 
         await SyncJudgeColorModeAsync();
         await SyncLockOverlayOpacityAsync();
+        await SyncUseSeatNameFileAsync();
         RefreshAllSeatPreviews();
+    }
+
+    private void OnLayoutClick(object sender, RoutedEventArgs e) =>
+        LayoutEditorWindowHelper.ShowOrActivate();
+
+    private void OnSaveViewerClick(object sender, RoutedEventArgs e) =>
+        SaveViewerWindowHelper.ShowOrActivate();
+
+    private async Task SyncUseSeatNameFileAsync()
+    {
+        if (!_hub.IsConnected)
+            return;
+
+        await _hub.HostSetUseSeatNameFileAsync(HostSettingsStore.Load().UseSeatNameFile);
     }
 
     private async Task SyncJudgeColorModeAsync()
@@ -777,31 +809,6 @@ public sealed partial class CompanelPage : Page
             if (SeatRepeater.TryGetElement(i) is SeatCardView view)
                 view.InvalidatePreview();
         }
-    }
-
-    private async void OnExitClick(object sender, RoutedEventArgs e)
-    {
-        var dialog = new ContentDialog
-        {
-            Title = "ソフト終了",
-            Content = "終わりますか？",
-            PrimaryButtonText = "終了",
-            CloseButtonText = "キャンセル",
-            DefaultButton = ContentDialogButton.Close,
-            XamlRoot = XamlRoot
-        };
-        if (await dialog.ShowAsync() != ContentDialogResult.Primary)
-            return;
-
-        if (AppHostContext.Server.IsRunning)
-        {
-            if (App.HostWindow is not null)
-                await App.HostWindow.StopServerWithOverlayAsync();
-            else
-                await AppHostContext.Server.StopAsync();
-        }
-
-        Application.Current.Exit();
     }
 
     private void ApplyStandbyLocalState()

@@ -6,8 +6,9 @@
     "files":  [
                   "playbook-common-app-rules.mdc",
                   "playbook-debug-visual-boundary.mdc",
+                  "playbook-doc-pair-sync.mdc",
                   "playbook-winui-second-window-borderless.mdc"
               ],
     "source":  "cursor-playbook",
-    "installedAt":  "2026-06-13T13:13:36.5790755+09:00"
+    "installedAt":  "2026-06-28T10:18:20.0884405+09:00"
 }

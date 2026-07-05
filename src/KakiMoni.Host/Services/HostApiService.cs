@@ -25,6 +25,15 @@ public static class HostApiService
         var entries = await Http.GetFromJsonAsync<List<BackgroundFileEntry>>(url, cancellationToken);
         return entries ?? new List<BackgroundFileEntry>();
     }
+
+    public static async Task<IReadOnlyList<BackgroundFileEntry>> GetBackgroundsAsync(
+        string baseUrl,
+        CancellationToken cancellationToken = default)
+    {
+        var url = $"{baseUrl.TrimEnd('/')}/api/backgrounds";
+        var entries = await Http.GetFromJsonAsync<List<BackgroundFileEntry>>(url, cancellationToken);
+        return entries ?? new List<BackgroundFileEntry>();
+    }
 }
 
 public sealed class SeatStatusEntry

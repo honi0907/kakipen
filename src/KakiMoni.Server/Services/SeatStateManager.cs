@@ -31,8 +31,8 @@ public sealed class SeatStateManager
 
             if (!_seats.TryGetValue(seatId, out var seat))
             {
-                seat = new SeatClientState { SeatId = seatId, Name = $"席 {seatId}" };
-                _seats[seatId] = seat;
+                EnsureSeatLocked(seatId);
+                seat = _seats[seatId];
             }
 
             if (!string.IsNullOrEmpty(seat.ConnectionId) && seat.ConnectionId != connectionId)
@@ -141,8 +141,8 @@ public sealed class SeatStateManager
             {
                 if (!_seats.TryGetValue(seatId, out var seat))
                 {
-                    seat = new SeatClientState { SeatId = seatId, Name = $"席 {seatId}" };
-                    _seats[seatId] = seat;
+                    EnsureSeatLocked(seatId);
+                    seat = _seats[seatId];
                 }
 
                 seat.Locked = locked;
@@ -200,5 +200,23 @@ public sealed class SeatStateManager
 
             seat.WritingBlackout = enabled;
         }
+    }
+
+    public void RefreshSeatNames(bool useFile, SeatNameFileService nameFiles)
+    {
+        lock (_gate)
+        {
+            for (var seatId = 1; seatId <= 10; seatId++)
+            {
+                EnsureSeatLocked(seatId);
+                _seats[seatId].Name = useFile ? nameFiles.GetNameForSeat(seatId) : string.Empty;
+            }
+        }
+    }
+
+    private void EnsureSeatLocked(int seatId)
+    {
+        if (!_seats.ContainsKey(seatId))
+            _seats[seatId] = new SeatClientState { SeatId = seatId, Name = string.Empty };
     }
 }

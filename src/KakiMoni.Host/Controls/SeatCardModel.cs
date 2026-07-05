@@ -16,6 +16,7 @@ public sealed class SeatCardModel : INotifyPropertyChanged
     private string? _choiceImageUrl;
     private string? _bgImageUrl;
     private string? _overlayImageUrl;
+    private string _seatName = string.Empty;
     private readonly List<StrokeData> _strokes = new();
     private StrokeData? _current;
 
@@ -78,6 +79,9 @@ public sealed class SeatCardModel : INotifyPropertyChanged
         ? (IsLocked ? "接続・ロック" : "接続中")
         : IsReconnecting ? "再接続中" : "未接続";
 
+    public string DisplayName =>
+        string.IsNullOrWhiteSpace(_seatName) ? $"ID {SeatId}" : _seatName;
+
     public string? ChoiceImageUrl
     {
         get => _choiceImageUrl;
@@ -112,6 +116,8 @@ public sealed class SeatCardModel : INotifyPropertyChanged
         WritingBlackout = seat.WritingBlackout;
         BgImageUrl = string.IsNullOrWhiteSpace(seat.BgImageUrl) ? null : seat.BgImageUrl;
         OverlayImageUrl = string.IsNullOrWhiteSpace(seat.OverlayImageUrl) ? null : seat.OverlayImageUrl;
+        _seatName = seat.Name ?? string.Empty;
+        OnPropertyChanged(nameof(DisplayName));
 
         if (!IsConnected)
         {

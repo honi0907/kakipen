@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="KakiMoni_Host.Display.HostDisplayCellView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml">
+
+    <Grid x:Name="RootGrid" Background="White">
+        <Image x:Name="BackgroundImage"
+               Stretch="Uniform"
+               IsHitTestVisible="False" />
+        <Image x:Name="FillJudgeOverlayImage"
+               Stretch="UniformToFill"
+               Visibility="Collapsed"
+               IsHitTestVisible="False" />
+        <canvas:CanvasControl x:Name="PreviewCanvas" Draw="PreviewCanvas_Draw" />
+        <Image x:Name="ChoiceOverlayImage"
+               Stretch="Uniform"
+               Visibility="Collapsed"
+               IsHitTestVisible="False" />
+        <Image x:Name="JudgeOverlayImage"
+               Stretch="Uniform"
+               Visibility="Collapsed"
+               IsHitTestVisible="False" />
+        <Border x:Name="DisconnectedOverlay"
+                Background="#DD111111"
+                Visibility="Collapsed">
+            <TextBlock Text="未接続"
+                       Foreground="#888888"
+                       FontSize="14"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center" />
+        </Border>
+    </Grid>
+</UserControl>

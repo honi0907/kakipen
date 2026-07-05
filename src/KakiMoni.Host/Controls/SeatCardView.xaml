@@ -39,6 +39,13 @@
                                FontWeight="Bold"
                                Foreground="White" />
                 </Border>
+                <TextBlock x:Name="SeatNameText"
+                           FontSize="10"
+                           FontWeight="SemiBold"
+                           Foreground="#e5e7eb"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           MaxWidth="72" />
                 <TextBlock x:Name="StatusText"
                            FontSize="10"
                            Foreground="#9ca3af"

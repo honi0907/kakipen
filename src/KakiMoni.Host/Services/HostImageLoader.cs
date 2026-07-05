@@ -15,10 +15,13 @@ public sealed class HostImageLoader
         if (HostAssetPathResolver.TryResolveLocalPath(urlOrRelative, out var localPath))
             return await LoadThumbnailFromFileAsync(localPath, decodeWidth);
 
-        if (!Uri.TryCreate(urlOrRelative, UriKind.Absolute, out _))
-            return null;
+        if (Uri.TryCreate(urlOrRelative, UriKind.Absolute, out _))
+            return await LoadThumbnailFromHttpAsync(urlOrRelative, decodeWidth);
 
-        return await LoadThumbnailFromHttpAsync(urlOrRelative, decodeWidth);
+        if (TryBuildServerAbsoluteUrl(urlOrRelative, out var serverUrl))
+            return await LoadThumbnailFromHttpAsync(serverUrl, decodeWidth);
+
+        return null;
     }
 
     public async Task<CanvasBitmap?> LoadCanvasBitmapAsync(
@@ -28,10 +31,26 @@ public sealed class HostImageLoader
         if (HostAssetPathResolver.TryResolveLocalPath(urlOrRelative, out var localPath))
             return await LoadCanvasBitmapFromFileAsync(localPath, cancellationToken);
 
-        if (!Uri.TryCreate(urlOrRelative, UriKind.Absolute, out _))
-            return null;
+        if (Uri.TryCreate(urlOrRelative, UriKind.Absolute, out _))
+            return await LoadCanvasBitmapFromHttpAsync(urlOrRelative, cancellationToken);
 
-        return await LoadCanvasBitmapFromHttpAsync(urlOrRelative, cancellationToken);
+        if (TryBuildServerAbsoluteUrl(urlOrRelative, out var serverUrl))
+            return await LoadCanvasBitmapFromHttpAsync(serverUrl, cancellationToken);
+
+        return null;
+    }
+
+    private static bool TryBuildServerAbsoluteUrl(string urlOrRelative, out string absoluteUrl)
+    {
+        absoluteUrl = string.Empty;
+        if (string.IsNullOrWhiteSpace(urlOrRelative) || !urlOrRelative.StartsWith('/'))
+            return false;
+
+        if (!AppHostContext.Server.IsRunning)
+            return false;
+
+        absoluteUrl = AppHostContext.Server.BaseUrl.TrimEnd('/') + urlOrRelative;
+        return true;
     }
 
     private static async Task<BitmapImage?> LoadThumbnailFromFileAsync(string localPath, int decodeWidth)

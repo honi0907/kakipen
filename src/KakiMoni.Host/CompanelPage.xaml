@@ -30,11 +30,6 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <Button Content="← ランチャー"
-                            Click="OnBackClick"
-                            FontSize="11"
-                            Padding="6,3"
-                            VerticalAlignment="Center" />
                     <TextBlock Text="KakiMoni 親機"
                                FontSize="17"
                                FontWeight="SemiBold"
@@ -179,11 +174,19 @@
                             Content="⚙ 設定"
                             Style="{StaticResource BtnBlueOutlineStyle}"
                             Click="OnSettingsClick" />
+                    <Button x:Name="LayoutButton"
+                            Content="レイアウト"
+                            Style="{StaticResource BtnBlueOutlineStyle}"
+                            Click="OnLayoutClick" />
+                    <Button x:Name="SaveViewerButton"
+                            Content="保存一覧"
+                            Style="{StaticResource BtnBlueOutlineStyle}"
+                            Click="OnSaveViewerClick" />
                     <Border Width="2" Height="72" Background="#6b7280" />
-                    <Button x:Name="ExitButton"
+                    <Button x:Name="LauncherButton"
                             Content="ソフト終了"
                             Style="{StaticResource BtnSubtleStyle}"
-                            Click="OnExitClick" />
+                            Click="OnLauncherClick" />
                 </StackPanel>
             </Grid>
         </Border>

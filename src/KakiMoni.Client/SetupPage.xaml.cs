@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using KakiMoni.Core.Updates;
 using KakiMoni_Client.Controls;
 using KakiMoni_Client.Services;
 using Microsoft.UI.Xaml;
@@ -30,6 +31,7 @@ public sealed partial class SetupPage : Page
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         StartupText.Text = $"[Startup] SetupPage Loaded {_startup.ElapsedMilliseconds}ms";
+        VersionText.Text = AppVersionDisplay.Label;
         Debug.WriteLine(StartupText.Text);
 
         ReloadSettingsUi();
@@ -393,6 +395,29 @@ public sealed partial class SetupPage : Page
         _settings.ShowClearButton = ShowClearButtonCheckBox.IsChecked == true;
         _settings.ShowEraserTool = ShowEraserToolCheckBox.IsChecked == true;
         ClientSettingsStore.Save(_settings);
+    }
+
+    private bool _onlineUpdateBusy;
+
+    private async void OnOnlineUpdateClick(object sender, RoutedEventArgs e)
+    {
+        if (_onlineUpdateBusy)
+            return;
+
+        _onlineUpdateBusy = true;
+        OnlineUpdateButton.IsEnabled = false;
+        try
+        {
+            await OnlineUpdateUiHelper.RunAsync(
+                XamlRoot,
+                AppUpdateKind.Client,
+                status => UpdateStatusText.Text = status);
+        }
+        finally
+        {
+            _onlineUpdateBusy = false;
+            OnlineUpdateButton.IsEnabled = true;
+        }
     }
 
     private async void OnConnectClick(object sender, RoutedEventArgs e)

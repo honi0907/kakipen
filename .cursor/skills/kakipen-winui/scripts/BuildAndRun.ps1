@@ -1,6 +1,6 @@
 # KakiMoni WinUI — build & optional launch (x64)
 param(
-    [ValidateSet('Host', 'Client', 'Both', 'Solution')]
+    [ValidateSet('Host', 'Client', 'Layout', 'Both', 'Solution')]
     [string]$Target = 'Solution',
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Debug',
@@ -15,7 +15,7 @@ $tfn = 'net8.0-windows10.0.26100.0'
 $rid = 'win-x64'
 
 function Stop-KakiMoni {
-    Stop-Process -Name 'KakiMoni.Host', 'KakiMoni.Client' -Force -ErrorAction SilentlyContinue
+    Stop-Process -Name 'KakiMoni.Host', 'KakiMoni.Client', 'KakiMoni.Layout' -Force -ErrorAction SilentlyContinue
 }
 
 function Build-Project([string]$ProjectDir) {
@@ -61,6 +61,15 @@ switch ($Target) {
             if (-not (Test-Path $exe)) { throw "Not found: $exe" }
             $p = Start-Process -FilePath $exe -PassThru
             Write-Host "KakiMoni.Client launched (PID: $($p.Id))"
+        }
+    }
+    'Layout' {
+        Build-Project (Join-Path $root 'src\KakiMoni.Layout')
+        if ($Run) {
+            $exe = Get-ExePath 'KakiMoni.Layout'
+            if (-not (Test-Path $exe)) { throw "Not found: $exe" }
+            $p = Start-Process -FilePath $exe -PassThru
+            Write-Host "KakiMoni.Layout launched (PID: $($p.Id))"
         }
     }
 }

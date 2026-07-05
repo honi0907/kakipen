@@ -1,0 +1,461 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Window
+    x:Class="KakiMoni_Host.Layout.LayoutEditorWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid x:Name="RootLayoutGrid"
+          MinWidth="1100"
+          MinHeight="640"
+          ColumnSpacing="12"
+          Padding="12"
+          Background="#0f172a"
+          RequestedTheme="Dark">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="520" />
+            <ColumnDefinition Width="320" MinWidth="300" />
+        </Grid.ColumnDefinitions>
+
+        <Grid Grid.Column="0" RowSpacing="6">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock Text="レイアウト編集（16:9）"
+                           Foreground="{StaticResource LayoutSidebarTextBrush}"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center" />
+                <TextBlock Text="1920 × 1080"
+                           Foreground="{StaticResource LayoutSidebarMutedBrush}"
+                           FontSize="12"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <Border Grid.Row="1"
+                    Background="#1e293b"
+                    BorderBrush="#334155"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="8,6"
+                    HorizontalAlignment="Left">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <TextBlock Text="グリッド"
+                               Foreground="{StaticResource LayoutSidebarMutedBrush}"
+                               FontWeight="SemiBold"
+                               FontSize="12"
+                               VerticalAlignment="Center" />
+                    <CheckBox x:Name="ShowGridCheckBox"
+                              Content="マス目"
+                              Foreground="{StaticResource LayoutSidebarTextBrush}"
+                              VerticalAlignment="Center"
+                              Checked="OnGridSettingsChanged"
+                              Unchecked="OnGridSettingsChanged" />
+                    <CheckBox x:Name="SnapToGridCheckBox"
+                              Content="スナップ"
+                              Foreground="{StaticResource LayoutSidebarTextBrush}"
+                              IsChecked="True"
+                              IsEnabled="False"
+                              VerticalAlignment="Center" />
+                    <TextBlock Text="マス"
+                               Foreground="{StaticResource LayoutSidebarMutedBrush}"
+                               FontSize="12"
+                               VerticalAlignment="Center" />
+                    <ComboBox x:Name="GridPresetComboBox"
+                              Width="108"
+                              VerticalAlignment="Center"
+                              SelectionChanged="OnGridPresetChanged">
+                        <ComboBoxItem Content="48 px" Tag="48" />
+                        <ComboBoxItem Content="96 px" Tag="96" />
+                        <ComboBoxItem Content="120 px" Tag="120" />
+                        <ComboBoxItem Content="160 px" Tag="160" />
+                        <ComboBoxItem Content="240 px" Tag="240" />
+                        <ComboBoxItem Content="カスタム" Tag="-1" />
+                    </ComboBox>
+                    <NumberBox x:Name="GridStepBox"
+                               Width="64"
+                               Minimum="8"
+                               Maximum="480"
+                               Value="120"
+                               Visibility="Collapsed"
+                               SpinButtonPlacementMode="Hidden"
+                               VerticalAlignment="Center"
+                               LostFocus="OnGridStepLostFocus"
+                               KeyDown="OnGridStepKeyDown" />
+                </StackPanel>
+            </Border>
+
+            <Grid Grid.Row="2"
+                  x:Name="CanvasHostGrid"
+                  Background="#0a0f1a">
+                <Viewbox Stretch="Uniform"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center">
+                    <Border Width="1920"
+                            Height="1080"
+                            BorderBrush="#64748b"
+                            BorderThickness="4"
+                            Background="#111827">
+                        <Grid>
+                            <Image x:Name="EditorBgImage"
+                                   Stretch="UniformToFill"
+                                   Visibility="Collapsed"
+                                   IsHitTestVisible="False" />
+                            <Canvas x:Name="GridOverlayCanvas"
+                                    Width="1920"
+                                    Height="1080"
+                                    Visibility="Collapsed"
+                                    IsHitTestVisible="False" />
+                            <Canvas x:Name="EditorCanvas"
+                                    Width="1920"
+                                    Height="1080" />
+                            <Canvas x:Name="MarginGuideLinesCanvas"
+                                    Width="1920"
+                                    Height="1080"
+                                    Visibility="Collapsed"
+                                    IsHitTestVisible="False" />
+                            <Canvas x:Name="MarginGuideInputsCanvas"
+                                    Width="1920"
+                                    Height="1080"
+                                    Visibility="Collapsed" />
+                        </Grid>
+                    </Border>
+                </Viewbox>
+            </Grid>
+
+            <Border Grid.Row="3"
+                    Background="#1e293b"
+                    BorderBrush="#334155"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="8"
+                    MaxHeight="260">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              RequestedTheme="Dark">
+                    <StackPanel Spacing="8">
+                        <TextBlock x:Name="SelectionHintText"
+                                   Text="パネルを選択してください"
+                                   Foreground="{StaticResource LayoutSidebarTextBrush}"
+                                   TextWrapping="WrapWholeWords" />
+
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*" MinWidth="180" />
+                                <ColumnDefinition Width="Auto" MinWidth="120" />
+                                <ColumnDefinition Width="3*" MinWidth="300" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel x:Name="PanelColorSection" Grid.Column="0" Spacing="4">
+                                <TextBlock Text="パネル色"
+                                           Foreground="{StaticResource LayoutSidebarMutedBrush}"
+                                           FontSize="12" />
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border x:Name="PanelColorPreview"
+                                            Height="32"
+                                            CornerRadius="4"
+                                            BorderBrush="#64748b"
+                                            BorderThickness="1"
+                                            Background="#64748b"
+                                            PointerPressed="OnPanelColorPreviewPointerPressed">
+                                        <FlyoutBase.AttachedFlyout>
+                                            <Flyout x:Name="PanelColorFlyout" Placement="Top">
+                                                <ColorPicker x:Name="PanelColorPicker"
+                                                             IsColorChannelTextInputVisible="True"
+                                                             IsColorSpectrumVisible="True"
+                                                             ColorChanged="OnPanelColorPickerColorChanged" />
+                                            </Flyout>
+                                        </FlyoutBase.AttachedFlyout>
+                                        <TextBlock x:Name="PanelColorPreviewLabel"
+                                                   Text="色を選ぶ"
+                                                   Foreground="#e2e8f0"
+                                                   FontSize="11"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   IsHitTestVisible="False" />
+                                    </Border>
+                                    <Grid x:Name="PresetColorGrid"
+                                          Grid.Column="1"
+                                          HorizontalAlignment="Stretch"
+                                          VerticalAlignment="Center" />
+                                </Grid>
+                                <TextBlock x:Name="PanelColorHintText"
+                                           Foreground="{StaticResource LayoutSidebarTextBrush}"
+                                           FontSize="11"
+                                           TextWrapping="WrapWholeWords"
+                                           Text="プリセットまたはプレビューをクリック" />
+                            </StackPanel>
+
+                            <StackPanel x:Name="PanelZOrderSection"
+                                        Grid.Column="1"
+                                        Spacing="4"
+                                        VerticalAlignment="Top">
+                                <TextBlock Text="重なり順"
+                                           Foreground="{StaticResource LayoutSidebarMutedBrush}"
+                                           FontSize="12" />
+                                <StackPanel Spacing="4">
+                                    <Button x:Name="BringForwardButton"
+                                            Content="前面へ"
+                                            Click="OnBringForwardClick"
+                                            HorizontalAlignment="Stretch"
+                                            MinWidth="100" />
+                                    <Button x:Name="SendBackwardButton"
+                                            Content="背面へ"
+                                            Click="OnSendBackwardClick"
+                                            HorizontalAlignment="Stretch"
+                                            MinWidth="100" />
+                                </StackPanel>
+                                <TextBlock x:Name="PanelZOrderHintText"
+                                           Foreground="{StaticResource LayoutSidebarTextBrush}"
+                                           FontSize="11"
+                                           TextWrapping="WrapWholeWords"
+                                           Text="パネルを選択してください" />
+                            </StackPanel>
+
+                            <Grid Grid.Column="2"
+                                  RowSpacing="6"
+                                  ColumnSpacing="6"
+                                  VerticalAlignment="Center">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="36" />
+                                    <ColumnDefinition Width="*" MinWidth="80" />
+                                    <ColumnDefinition Width="64" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="36" />
+                                    <ColumnDefinition Width="*" MinWidth="80" />
+                                    <ColumnDefinition Width="64" />
+                                    <ColumnDefinition Width="88" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" MinHeight="36" />
+                                    <RowDefinition Height="Auto" MinHeight="36" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0"
+                                           Text="幅"
+                                           Foreground="{StaticResource LayoutSidebarMutedBrush}"
+                                           FontSize="12"
+                                           VerticalAlignment="Center" />
+                                <Slider Grid.Row="0" Grid.Column="1"
+                                        x:Name="WSlider"
+                                        Minimum="24"
+                                        Maximum="1920"
+                                        StepFrequency="1"
+                                        Value="480"
+                                        VerticalAlignment="Center"
+                                        ValueChanged="OnGeometrySliderChanged" />
+                                <NumberBox Grid.Row="0" Grid.Column="2"
+                                           x:Name="WBox"
+                                           Minimum="24"
+                                           Maximum="1920"
+                                           Value="480"
+                                           SpinButtonPlacementMode="Hidden"
+                                           HorizontalAlignment="Stretch"
+                                           LostFocus="OnGeometryNumberLostFocus"
+                                           KeyDown="OnGeometryNumberKeyDown" />
+
+                                <TextBlock Grid.Row="0" Grid.Column="4"
+                                           Text="高さ"
+                                           Foreground="{StaticResource LayoutSidebarMutedBrush}"
+                                           FontSize="12"
+                                           VerticalAlignment="Center" />
+                                <Slider Grid.Row="0" Grid.Column="5"
+                                        x:Name="HSlider"
+                                        Minimum="24"
+                                        Maximum="1080"
+                                        StepFrequency="1"
+                                        Value="270"
+                                        VerticalAlignment="Center"
+                                        ValueChanged="OnGeometrySliderChanged" />
+                                <NumberBox Grid.Row="0" Grid.Column="6"
+                                           x:Name="HBox"
+                                           Minimum="24"
+                                           Maximum="1080"
+                                           Value="270"
+                                           SpinButtonPlacementMode="Hidden"
+                                           HorizontalAlignment="Stretch"
+                                           LostFocus="OnGeometryNumberLostFocus"
+                                           KeyDown="OnGeometryNumberKeyDown" />
+                                <CheckBox Grid.Row="0" Grid.Column="7"
+                                          x:Name="LinkWhCheckBox"
+                                          Content="WH連動"
+                                          Foreground="{StaticResource LayoutSidebarTextBrush}"
+                                          IsChecked="True"
+                                          VerticalAlignment="Center"
+                                          VerticalContentAlignment="Center"
+                                          Padding="0,6,0,6"
+                                          Checked="OnLinkWhChanged"
+                                          Unchecked="OnLinkWhChanged" />
+
+                                <TextBlock Grid.Row="1" Grid.Column="0"
+                                           Text="X"
+                                           Foreground="{StaticResource LayoutSidebarMutedBrush}"
+                                           FontSize="12"
+                                           VerticalAlignment="Center" />
+                                <Slider Grid.Row="1" Grid.Column="1"
+                                        x:Name="XSlider"
+                                        Minimum="0"
+                                        Maximum="1920"
+                                        StepFrequency="1"
+                                        Value="0"
+                                        VerticalAlignment="Center"
+                                        ValueChanged="OnGeometrySliderChanged" />
+                                <NumberBox Grid.Row="1" Grid.Column="2"
+                                           x:Name="XBox"
+                                           Minimum="0"
+                                           Maximum="1920"
+                                           Value="0"
+                                           SpinButtonPlacementMode="Hidden"
+                                           HorizontalAlignment="Stretch"
+                                           LostFocus="OnGeometryNumberLostFocus"
+                                           KeyDown="OnGeometryNumberKeyDown" />
+
+                                <TextBlock Grid.Row="1" Grid.Column="4"
+                                           Text="Y"
+                                           Foreground="{StaticResource LayoutSidebarMutedBrush}"
+                                           FontSize="12"
+                                           VerticalAlignment="Center" />
+                                <Slider Grid.Row="1" Grid.Column="5"
+                                        x:Name="YSlider"
+                                        Minimum="0"
+                                        Maximum="1080"
+                                        StepFrequency="1"
+                                        Value="0"
+                                        VerticalAlignment="Center"
+                                        ValueChanged="OnGeometrySliderChanged" />
+                                <NumberBox Grid.Row="1" Grid.Column="6"
+                                           x:Name="YBox"
+                                           Minimum="0"
+                                           Maximum="1080"
+                                           Value="0"
+                                           SpinButtonPlacementMode="Hidden"
+                                           HorizontalAlignment="Stretch"
+                                           LostFocus="OnGeometryNumberLostFocus"
+                                           KeyDown="OnGeometryNumberKeyDown" />
+                            </Grid>
+                        </Grid>
+
+                        <TextBlock Text="キャンバス上でドラッグして移動、右下の白い角でサイズ変更。矢印キーで 1px 微調整"
+                                   Foreground="{StaticResource LayoutSidebarTextBrush}"
+                                   FontSize="11"
+                                   TextWrapping="WrapWholeWords" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <Border x:Name="SidebarHost"
+                Grid.Column="1"
+                MinWidth="300"
+                Background="#1e293b"
+                BorderBrush="#334155"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="8">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          RequestedTheme="Dark">
+                <StackPanel x:Name="SidebarPanel" Spacing="10">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0"
+                                Content="＋ パネル追加"
+                                Click="OnAddPanelClick"
+                                HorizontalAlignment="Stretch" />
+                        <Button Grid.Column="1"
+                                Content="選択を削除"
+                                Click="OnDeletePanelClick"
+                                HorizontalAlignment="Stretch" />
+                    </Grid>
+
+                    <Border Height="1" Background="#334155" />
+
+                    <TextBlock Text="パネル設定"
+                               Foreground="{StaticResource LayoutSidebarMutedBrush}"
+                               FontWeight="SemiBold" />
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="パネル選択"
+                                   Foreground="{StaticResource LayoutSidebarMutedBrush}"
+                                   FontSize="12" />
+                        <ComboBox x:Name="PanelSelectComboBox"
+                                  PlaceholderText="パネルを選択"
+                                  HorizontalAlignment="Stretch"
+                                  SelectionChanged="OnPanelSelectComboChanged" />
+                    </StackPanel>
+
+                    <CheckBox x:Name="PanelLockCheckBox"
+                              Content="位置・サイズをロック"
+                              Foreground="{StaticResource LayoutSidebarTextBrush}"
+                              IsEnabled="False"
+                              Checked="OnPanelLockChanged"
+                              Unchecked="OnPanelLockChanged" />
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="IDをパネルに入力"
+                                   Foreground="{StaticResource LayoutSidebarMutedBrush}"
+                                   FontSize="12" />
+                        <ComboBox x:Name="SeatComboBox"
+                                  HorizontalAlignment="Stretch"
+                                  SelectionChanged="OnSeatComboChanged" />
+                    </StackPanel>
+
+                    <Border Height="1" Background="#334155" Margin="0,4" />
+
+                    <TextBlock Text="背景画像"
+                               Foreground="{StaticResource LayoutSidebarMutedBrush}"
+                               FontWeight="SemiBold" />
+                    <ComboBox x:Name="BgComboBox"
+                              PlaceholderText="なし"
+                              HorizontalAlignment="Stretch"
+                              SelectionChanged="OnBgComboChanged" />
+
+                    <Border Height="1" Background="#334155" Margin="0,4" />
+
+                    <TextBlock Text="プリセット"
+                               Foreground="{StaticResource LayoutSidebarMutedBrush}"
+                               FontWeight="SemiBold" />
+                    <TextBox x:Name="PresetNameBox"
+                             PlaceholderText="プリセット名"
+                             HorizontalAlignment="Stretch" />
+                    <ComboBox x:Name="PresetComboBox"
+                              PlaceholderText="保存済みを選択"
+                              HorizontalAlignment="Stretch"
+                              SelectionChanged="OnPresetComboChanged" />
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0"
+                                Content="プリセット保存"
+                                Click="OnSavePresetClick"
+                                HorizontalAlignment="Stretch" />
+                        <Button Grid.Column="1"
+                                Content="プリセット読込"
+                                Click="OnLoadPresetClick"
+                                HorizontalAlignment="Stretch" />
+                    </Grid>
+
+                    <Button Content="ディスプレイに送信"
+                            Click="OnApplyClick"
+                            HorizontalAlignment="Stretch" />
+                    <Button Content="閉じる"
+                            Click="OnCloseClick"
+                            HorizontalAlignment="Stretch" />
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</Window>

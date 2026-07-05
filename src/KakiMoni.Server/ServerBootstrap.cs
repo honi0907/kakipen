@@ -17,7 +17,7 @@ public sealed class ServerBootstrap : IAsyncDisposable
     public bool IsRunning => _app is not null;
     public int Port { get; private set; }
 
-    public async Task StartAsync(string contentRoot, int port, CancellationToken cancellationToken = default)
+    public async Task StartAsync(string contentRoot, int port, bool useSeatNameFile = false, CancellationToken cancellationToken = default)
     {
         if (_app is not null)
             return;
@@ -36,17 +36,29 @@ public sealed class ServerBootstrap : IAsyncDisposable
         builder.Services.AddSingleton(new ChoiceFileService(contentRoot));
         builder.Services.AddSingleton(new LogoFileService(contentRoot));
         builder.Services.AddSingleton(new OverlayFileService(contentRoot));
+        builder.Services.AddSingleton(new SeatNameFileService(contentRoot));
         builder.Services.AddSingleton(new SaveStateService(contentRoot));
+        builder.Services.AddSingleton(new SaveGalleryService(contentRoot));
+        builder.Services.AddSingleton<SaveGalleryLiveService>();
         builder.Services.AddSingleton<DisplayConnectionManager>();
         builder.Services.AddSingleton<GameSessionState>();
         builder.Services.AddSingleton<SeatStateManager>();
+        builder.Services.AddSingleton<LayoutDisplayLayoutManager>();
         builder.Services.AddSignalR();
 
         var app = builder.Build();
+
+        var session = app.Services.GetRequiredService<GameSessionState>();
+        session.UseSeatNameFile = useSeatNameFile;
+        app.Services.GetRequiredService<SeatStateManager>()
+            .RefreshSeatNames(useSeatNameFile, app.Services.GetRequiredService<SeatNameFileService>());
+
         MapStatic(app, contentRoot);
         MapWeb(app, contentRoot);
         MapApi(app);
         app.MapHub<GameHub>("/hub");
+
+        app.Services.GetRequiredService<SaveGalleryLiveService>().Start(contentRoot);
 
         await app.StartAsync(cancellationToken);
         _app = app;
@@ -139,7 +151,7 @@ public sealed class ServerBootstrap : IAsyncDisposable
                 {
                     seatId,
                     connected = !string.IsNullOrEmpty(seat?.ConnectionId),
-                    name = string.IsNullOrWhiteSpace(seat?.Name) ? $"席 {seatId}" : seat!.Name,
+                    name = SeatNameHelper.GetDisplayName(seatId, seat?.Name),
                     strokeCount = seat?.Strokes.Count ?? 0
                 };
             });
@@ -171,7 +183,7 @@ public sealed class ServerBootstrap : IAsyncDisposable
             return Results.Json(saves.SetCounter(body!.Counter));
         });
 
-        app.MapPost("/api/save-snapshot", async (HttpRequest request, SaveStateService saves) =>
+        app.MapPost("/api/save-snapshot", async (HttpRequest request, SaveStateService saves, SaveGalleryLiveService live) =>
         {
             var body = await request.ReadFromJsonAsync<SaveSnapshotRequest>();
             if (body is null || body.SeatId is < 1 or > 10)
@@ -198,7 +210,104 @@ public sealed class ServerBootstrap : IAsyncDisposable
 
             var type = string.IsNullOrWhiteSpace(body.Type) ? "SAVE" : body.Type.Trim().ToUpperInvariant();
             var fileName = saves.SaveSnapshot(body.SeatId, body.Session, body.Counter, type, png);
+            live.NotifyChanged();
             return Results.Json(new { ok = true, fileName });
+        });
+
+        app.MapGet("/api/save-gallery", (HttpRequest request, SaveGalleryService gallery) =>
+        {
+            try
+            {
+                var seatIds = SaveGalleryService.ParseSeatIds(request.Query["ids"]);
+                var maxPerSeatRaw = int.TryParse(request.Query["maxPerSeat"], out var parsedMax) ? parsedMax : 120;
+                var result = gallery.BuildGallery(seatIds, maxPerSeatRaw);
+                return Results.Json(new
+                {
+                    ok = true,
+                    seatIds = result.SeatIds,
+                    maxPerSeat = result.MaxPerSeat,
+                    total = result.Total,
+                    bySeat = result.BySeat.ToDictionary(
+                        pair => pair.Key.ToString(),
+                        pair => new
+                        {
+                            seatId = pair.Value.SeatId,
+                            totalCount = pair.Value.TotalCount,
+                            items = pair.Value.Items.Select(item => new
+                            {
+                                item.SeatId,
+                                item.Session,
+                                item.Counter,
+                                item.Type,
+                                item.FileName,
+                                item.Size,
+                                updatedAt = item.UpdatedAt.ToString("O"),
+                                updatedAtMs = item.UpdatedAtMs,
+                                thumbnailUrl = $"/api/save-file/{item.SeatId}/{Uri.EscapeDataString(item.FileName)}"
+                            })
+                        })
+                });
+            }
+            catch (Exception ex)
+            {
+                return Results.Json(new { ok = false, error = ex.Message });
+            }
+        });
+
+        app.MapGet("/api/save-gallery/live", async (HttpContext context, SaveGalleryLiveService live, CancellationToken cancellationToken) =>
+        {
+            context.Response.Headers.ContentType = "text/event-stream; charset=utf-8";
+            context.Response.Headers.CacheControl = "no-cache, no-transform";
+            context.Response.Headers.Connection = "keep-alive";
+
+            await context.Response.WriteAsync("event: save-gallery-ready\n", cancellationToken);
+            await context.Response.WriteAsync(
+                $"data: {{\"revision\":{live.Revision},\"reason\":\"ready\"}}\n\n",
+                cancellationToken);
+            await context.Response.Body.FlushAsync(cancellationToken);
+
+            void OnChanged()
+            {
+                try
+                {
+                    var payload = $"data: {{\"revision\":{live.Revision},\"reason\":\"updated\"}}\n\n";
+                    _ = context.Response.WriteAsync("event: save-gallery-updated\n", cancellationToken);
+                    _ = context.Response.WriteAsync(payload, cancellationToken);
+                    _ = context.Response.Body.FlushAsync(cancellationToken);
+                }
+                catch { }
+            }
+
+            live.Changed += OnChanged;
+            try
+            {
+                while (!cancellationToken.IsCancellationRequested && !context.RequestAborted.IsCancellationRequested)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(25), cancellationToken);
+                    await context.Response.WriteAsync(": keep-alive\n\n", cancellationToken);
+                    await context.Response.Body.FlushAsync(cancellationToken);
+                }
+            }
+            catch (OperationCanceledException) { }
+            finally
+            {
+                live.Changed -= OnChanged;
+            }
+        });
+
+        app.MapGet("/api/save-file/{seatId:int}/{fileName}", (int seatId, string fileName, SaveGalleryService gallery) =>
+        {
+            try
+            {
+                if (!gallery.TryResolveFilePath(seatId, fileName, out var filePath))
+                    return Results.BadRequest(new { ok = false, error = "invalid file" });
+
+                return Results.File(filePath, "image/png");
+            }
+            catch (Exception ex)
+            {
+                return Results.Json(new { ok = false, error = ex.Message });
+            }
         });
     }
 

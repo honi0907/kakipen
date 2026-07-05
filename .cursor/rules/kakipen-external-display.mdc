@@ -1,10 +1,10 @@
 ---
-description: 子機外部出力ウィンドウの配置・ボーダーレス（フルスクリーン白縁対策の確定パターン）
-globs: src/KakiMoni.Client/DisplayWindow.*,src/KakiMoni.Client/Services/DisplayOutputService.cs,src/KakiMoni.Client/Services/MonitorHelper.cs,src/KakiMoni.Client/Services/ClientWindowLayout.cs
+description: 子機・親機外部出力ウィンドウの配置・ボーダーレス（フルスクリーン白縁対策の確定パターン）
+globs: src/KakiMoni.Client/DisplayWindow.*,src/KakiMoni.Client/Services/DisplayOutputService.cs,src/KakiMoni.Client/Services/MonitorHelper.cs,src/KakiMoni.Client/Services/ClientWindowLayout.cs,src/KakiMoni.Host/Display/HostDisplayWindow.*,src/KakiMoni.Host/Services/HostDisplayOutputService.cs,src/KakiMoni.Host/Services/HostMonitorHelper.cs,src/KakiMoni.Host/Services/HostDisplayWindowLayout.cs
 alwaysApply: false
 ---
 
-# 外部出力ウィンドウ（DisplayWindow）
+# 外部出力ウィンドウ（DisplayWindow / HostDisplayWindow）
 
 ## フルスクリーン ON（確定パターン）
 
@@ -14,6 +14,7 @@ alwaysApply: false
 
 ## 主要ファイル
 
-- `DisplayWindow.xaml` / `.xaml.cs` … `ShowOnDisplay`
-- `MonitorHelper.cs` … `ApplyWin32Borderless`, `ApplyWin32BorderlessAndBounds`, `ExpandBounds`
-- `ClientWindowLayout.cs` … `MoveToSecondaryMonitor`（WinUI のみ）, `PrepareDisplayWin32FullscreenChrome`
+- 子機: `DisplayWindow.xaml` / `.xaml.cs` … `ShowOnDisplay`
+- 親機: `HostDisplayWindow.xaml` / `.xaml.cs` … `ShowOnDisplay`
+- `MonitorHelper.cs` / `HostMonitorHelper.cs` … `ApplyWin32Borderless`, `ApplyWin32BorderlessAndBounds`, `ExpandBounds`
+- `ClientWindowLayout.cs` / `HostDisplayWindowLayout.cs` … 第2モニター配置

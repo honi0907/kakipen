@@ -8,33 +8,170 @@
     mc:Ignorable="d"
     Background="{ThemeResource LayerOnAcrylicFillColorDefaultBrush}">
 
-    <ScrollViewer Padding="24">
-        <StackPanel Spacing="16" MaxWidth="520">
-            <TextBlock Text="KakiMoni 親機" FontSize="28" FontWeight="SemiBold" />
-            <TextBlock x:Name="StartupText" Opacity="0.7" Text="起動中..." />
+    <ScrollViewer Padding="24,20,24,24"
+                  VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
+        <Grid MaxWidth="920" RowSpacing="16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-            <NumberBox x:Name="PortBox" Header="ポート" Value="3000" Minimum="1024" Maximum="65535" SpinButtonPlacementMode="Inline" />
-
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button x:Name="StartButton" Content="サーバー起動" Click="OnStartClick" />
-                <Button x:Name="StopButton" Content="停止" Click="OnStopClick" IsEnabled="False" />
-                <Button x:Name="CompanelButton" Content="コンパネを開く" Click="OnCompanelClick" IsEnabled="False" />
+            <StackPanel Spacing="4">
+                <TextBlock Text="KakiMoni 親機"
+                           Style="{ThemeResource TitleTextBlockStyle}" />
+                <TextBlock Text="サーバー起動・コンパネ・外部出力"
+                           Style="{ThemeResource BodyTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <TextBlock x:Name="VersionText"
+                           Style="{ThemeResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <TextBlock x:Name="StartupText" Visibility="Collapsed" />
             </StackPanel>
 
-            <TextBlock x:Name="StatusText" Text="停止中" TextWrapping="WrapWholeWords" />
-            <TextBlock x:Name="UrlText" Opacity="0.8" TextWrapping="WrapWholeWords" />
+            <Grid Grid.Row="1" ColumnSpacing="24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MinWidth="280" MaxWidth="360" />
+                    <ColumnDefinition Width="1.25*" MinWidth="380" />
+                </Grid.ColumnDefinitions>
 
-            <StackPanel x:Name="SeatsPanel" Spacing="8" Visibility="Collapsed">
-                <TextBlock Text="子機接続状況" FontSize="16" FontWeight="SemiBold" />
-                <TextBlock x:Name="SeatsSummaryText" Opacity="0.85" />
-                <Grid
-                    x:Name="SeatsGrid"
-                    ColumnDefinitions="*,*,*,*,*"
-                    RowDefinitions="Auto,Auto"
-                    ColumnSpacing="6"
-                    RowSpacing="6" />
-                <TextBlock x:Name="SeatsUpdatedText" FontSize="12" Opacity="0.6" />
-            </StackPanel>
-        </StackPanel>
+                <!-- 左: サーバー・状態 -->
+                <StackPanel Grid.Column="0" Spacing="16">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="サーバー"
+                                   Style="{ThemeResource BodyStrongTextBlockStyle}" />
+
+                        <NumberBox x:Name="PortBox"
+                                   Header="ポート"
+                                   Value="3000"
+                                   Minimum="1024"
+                                   Maximum="65535"
+                                   SpinButtonPlacementMode="Inline"
+                                   HorizontalAlignment="Stretch" />
+
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button x:Name="StartButton"
+                                    Content="サーバー起動"
+                                    Style="{StaticResource AccentButtonStyle}"
+                                    Click="OnStartClick" />
+                            <Button x:Name="StopButton"
+                                    Content="停止"
+                                    Click="OnStopClick"
+                                    IsEnabled="False" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button x:Name="CompanelButton"
+                                    Content="コンパネを開く"
+                                    Click="OnCompanelClick"
+                                    IsEnabled="False" />
+                            <Button x:Name="DisplayToggleButton"
+                                    Content="外部出力 ON"
+                                    Click="OnDisplayToggleClick"
+                                    IsEnabled="False" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Border Height="1"
+                            Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="状態"
+                                   Style="{ThemeResource BodyStrongTextBlockStyle}" />
+
+                        <InfoBar x:Name="StatusInfoBar"
+                                 IsOpen="True"
+                                 IsClosable="False"
+                                 Severity="Informational"
+                                 Title="停止中" />
+
+                        <TextBlock x:Name="DisplayStatusText"
+                                   Style="{ThemeResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   Visibility="Collapsed" />
+
+                        <StackPanel x:Name="UrlPanel" Spacing="6" Visibility="Collapsed">
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               Text="子機 URL" />
+                                    <TextBlock x:Name="ChildUrlText"
+                                               Style="{ThemeResource BodyTextBlockStyle}"
+                                               FontSize="13"
+                                               IsTextSelectionEnabled="True"
+                                               TextWrapping="WrapWholeWords" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="2">
+                                    <TextBlock Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               Text="コンパネ" />
+                                    <TextBlock x:Name="CompanelUrlText"
+                                               Style="{ThemeResource BodyTextBlockStyle}"
+                                               FontSize="13"
+                                               IsTextSelectionEnabled="True"
+                                               TextWrapping="WrapWholeWords" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Border Height="1"
+                            Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="アプリ更新"
+                                   Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                        <TextBlock x:Name="UpdateStatusText"
+                                   Style="{ThemeResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   TextWrapping="WrapWholeWords"
+                                   Text="未確認" />
+                        <Button x:Name="OnlineUpdateButton"
+                                Content="親機をオンライン更新"
+                                Click="OnOnlineUpdateClick"
+                                HorizontalAlignment="Left" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- 右: 子機接続状況 -->
+                <StackPanel Grid.Column="1" Spacing="10" VerticalAlignment="Top">
+                    <TextBlock x:Name="EmptyHintText"
+                               Style="{ThemeResource BodyTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="サーバーを起動すると、子機の接続状況が表示されます。"
+                               VerticalAlignment="Center"
+                               Margin="0,40,0,0" />
+
+                    <StackPanel x:Name="SeatsPanel" Spacing="8" Visibility="Collapsed">
+                        <TextBlock Text="子機接続状況"
+                                   Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                        <TextBlock x:Name="SeatsSummaryText"
+                                   Style="{ThemeResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Padding="10">
+                            <Grid x:Name="SeatsGrid"
+                                  ColumnDefinitions="*,*,*,*,*"
+                                  RowDefinitions="Auto,Auto"
+                                  ColumnSpacing="6"
+                                  RowSpacing="6" />
+                        </Border>
+
+                        <TextBlock x:Name="SeatsUpdatedText"
+                                   Style="{ThemeResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   HorizontalAlignment="Right" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Grid>
     </ScrollViewer>
 </Page>

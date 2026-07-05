@@ -10,4 +10,7 @@ public sealed class HostSettings
 
     /// <summary>子機ロック時オーバーレイの暗さ（0–100%、100 が最も暗い）。</summary>
     public int LockOverlayOpacityPercent { get; set; } = 80;
+
+    /// <summary>assets/seat-names.txt から席名を読み込む。</summary>
+    public bool UseSeatNameFile { get; set; }
 }

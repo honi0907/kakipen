@@ -1,3 +1,4 @@
+using KakiMoni_Host.Services;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 
@@ -17,6 +18,10 @@ public sealed partial class MainWindow : Window
         AppWindow.SetIcon("Assets/AppIcon.ico");
         Title = "KakiMoni 親機";
         AppTitleBar.Title = "KakiMoni 親機";
+        if (AppWindow is not null)
+        {
+            CompanelWindowHelper.EnsureLauncherWindowSize(this);
+        }
         RootFrame.Navigate(typeof(MainPage));
         HookClosing();
         Activated += OnWindowActivated;
@@ -37,6 +42,15 @@ public sealed partial class MainWindow : Window
         HookClosing();
     }
 
+    public async Task ShowBusyOverlayAsync(string message)
+    {
+        await EnqueueAsync(() => ShowOverlay(message));
+        await WaitForOverlayRenderAsync();
+    }
+
+    public void HideBusyOverlay() =>
+        DispatcherQueue.TryEnqueue(HideOverlay);
+
     public async Task StopServerWithOverlayAsync()
     {
         if (!AppHostContext.Server.IsRunning || _stopInProgress)
@@ -54,7 +68,7 @@ public sealed partial class MainWindow : Window
         if (_stopInProgress)
             return;
 
-        ShowStopOverlay();
+        ShowOverlay("サーバー停止中...");
         _ = StopServerInternalAsync(closeAfter: true);
     }
 
@@ -69,7 +83,7 @@ public sealed partial class MainWindow : Window
 
         _stopInProgress = true;
         if (StopOverlay.Visibility != Visibility.Visible)
-            await EnqueueAsync(ShowStopOverlay);
+            await EnqueueAsync(() => ShowOverlay("サーバー停止中..."));
 
         await WaitForOverlayRenderAsync();
 
@@ -81,7 +95,7 @@ public sealed partial class MainWindow : Window
         {
             await EnqueueAsync(() =>
             {
-                HideStopOverlay();
+                HideOverlay();
                 _stopInProgress = false;
                 if (closeAfter)
                     CloseWindow();
@@ -101,14 +115,15 @@ public sealed partial class MainWindow : Window
         Close();
     }
 
-    private void ShowStopOverlay()
+    private void ShowOverlay(string message)
     {
+        OverlayMessageText.Text = message;
         StopProgressRing.IsActive = true;
         StopOverlay.Visibility = Visibility.Visible;
         StopOverlay.UpdateLayout();
     }
 
-    private void HideStopOverlay()
+    private void HideOverlay()
     {
         StopProgressRing.IsActive = false;
         StopOverlay.Visibility = Visibility.Collapsed;
