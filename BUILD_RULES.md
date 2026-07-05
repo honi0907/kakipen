@@ -22,17 +22,52 @@ Platform は常に **x64**。ビルド前に実行中 exe を終了する。
 
 ## リリースビルド
 
+**既定は変わったアプリだけ**（高速）。全4アプリまとめては `-Target All`。
+
 ```powershell
 cd C:\Users\k-mizukami\Desktop\kakipen
-.\scripts\release.ps1
+
+# 親機だけ（SaveViewer も同時に Setup + GitHub Release）
+.\scripts\release.ps1 -Target Host
+
+# 子機だけ
+.\scripts\release.ps1 -Target Client
+
+# レイアウトだけ
+.\scripts\release.ps1 -Target Layout
+
+# 保存一覧だけ（Host を publish して SaveViewer の Setup のみ）
+.\scripts\release.ps1 -Target SaveViewer
+
+# 複数指定
+.\scripts\release.ps1 -Target Host,Client
+
+# 全4アプリ（初回・大きな変更時。約7〜10分）
+.\scripts\release.ps1 -Target All
 ```
+
+| `-Target` | publish | Setup + GitHub Release |
+|-----------|---------|------------------------|
+| `Host` | Host | Host + **SaveViewer**（同一 exe のため） |
+| `Client` | Client | Client |
+| `Layout` | Layout | Layout |
+| `SaveViewer` | Host | SaveViewer のみ |
+| `All` | 3種 | 4種すべて |
+
+`KakiMoni.Core` / `KakiMoni.Server` を変えたときは **`-Target Host`**（必要なら Client も）。
 
 内部で `publish-apps.ps1`（**Setup のみ・ZIP なし**）→ `installer/build-installers.ps1` を実行する。
 
 Portable ZIP が必要なときだけ（ユーザー指示時）:
 
 ```powershell
-.\scripts\release.ps1 -WithPortableZip
+.\scripts\release.ps1 -Target Host -WithPortableZip
+```
+
+ビルドのみ（push / GitHub なし）:
+
+```powershell
+.\scripts\release.ps1 -Target Host -DryRun
 ```
 
 ### 前提
@@ -73,7 +108,8 @@ Portable ZIP が必要なときだけ（ユーザー指示時）:
 
 ### 禁止・運用
 
-- `dist/` に古いバージョンの成果物を残さない（publish 時に `dist/` ごと削除して再生成）
+- **部分リリース時**は対象アプリの `dist/` サブフォルダと Setup だけ削除して再生成（他アプリは残す）
+- **`-Target All` のときだけ** `dist/` ごと削除して再生成
 - **通常のリリースビルドは Setup のみ**（`release.ps1` 既定。ZIP は `-WithPortableZip` のときだけ）
 - **GitHub Release / オンライン更新に載せるのは Setup のみ**
 - `dist/` は `.gitignore` 済み
@@ -82,10 +118,10 @@ Portable ZIP が必要なときだけ（ユーザー指示時）:
 
 1. `Directory.Build.props` の `<Version>` を上げる（`app.manifest` の `assemblyIdentity` も `X.Y.Z.0` に合わせる）
 2. 実行中の `KakiMoni.*.exe` を終了
-3. `.\scripts\release.ps1` を実行
+3. 変わったアプリだけ `.\scripts\release.ps1 -Target Host` 等を実行（全アプリなら `-Target All`）
 4. Setup をクリーン環境にインストールし、親機→子機の疎通を確認
-5. commit → **4 つの tag** を push
-6. GitHub Release を **アプリごとに 4 回** 作成（各 Setup 1 ファイル）
+5. commit → push（`release.ps1` が実行する場合あり）
+6. GitHub Release は **対象アプリ分だけ** 作成（各 Setup 1 ファイル）
 
 ```powershell
 gh release create host-v0.0.1 `

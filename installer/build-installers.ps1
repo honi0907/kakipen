@@ -1,7 +1,9 @@
 param(
     [string]$Version = "",
     [string]$DistDir = "",
-    [string]$IsccPath = ""
+    [string]$IsccPath = "",
+    [ValidateSet("Host", "Client", "Layout", "SaveViewer")]
+    [string[]]$InstallerTargets = @("Host", "Client", "Layout", "SaveViewer")
 )
 
 $ErrorActionPreference = "Stop"
@@ -77,21 +79,25 @@ if (-not (Test-Path $assetsDir)) {
 $iscc = Ensure-InnoSetup -IsccOverride $IsccPath
 $installerDir = $PSScriptRoot
 
-$targets = @(
+$jobs = @(
     @{ Key = "Host"; Iss = "KakiMoni.Host.iss"; PublishSub = "Host" },
     @{ Key = "Client"; Iss = "KakiMoni.Client.iss"; PublishSub = "Client" },
     @{ Key = "Layout"; Iss = "KakiMoni.Layout.iss"; PublishSub = "Layout" },
     @{ Key = "SaveViewer"; Iss = "KakiMoni.SaveViewer.iss"; PublishSub = "Host" }
-)
+) | Where-Object { $InstallerTargets -contains $_.Key }
+
+if ($jobs.Count -eq 0) {
+    throw "No installer targets selected."
+}
 
 $setups = @()
-foreach ($target in $targets) {
-    $publishDir = Join-Path $dist $target.PublishSub
+foreach ($job in $jobs) {
+    $publishDir = Join-Path $dist $job.PublishSub
     if (-not (Test-Path (Join-Path $publishDir "*.exe"))) {
         throw "Publish output not found: $publishDir"
     }
 
-    $issPath = Join-Path $installerDir $target.Iss
+    $issPath = Join-Path $installerDir $job.Iss
     $defines = @(
         "/DAppVersion=$Version",
         "/DPublishDir=$publishDir",
@@ -100,13 +106,13 @@ foreach ($target in $targets) {
         "/DRepoRoot=$root"
     )
 
-    Write-Host "ISCC $($target.Iss) ..."
+    Write-Host "ISCC $($job.Iss) ..."
     & $iscc $defines $issPath
     if ($LASTEXITCODE -ne 0) {
-        throw "Inno Setup build failed: $($target.Iss)"
+        throw "Inno Setup build failed: $($job.Iss)"
     }
 
-    $setupPath = Join-Path $dist "KakiMoni_$($target.Key)-$Version-Setup.exe"
+    $setupPath = Join-Path $dist "KakiMoni_$($job.Key)-$Version-Setup.exe"
     if (-not (Test-Path $setupPath)) {
         throw "Setup was not generated: $setupPath"
     }

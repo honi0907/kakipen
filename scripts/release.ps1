@@ -1,6 +1,9 @@
 param(
+    [ValidateSet("Host", "Client", "Layout", "SaveViewer", "All")]
+    [string[]]$Target = @("All"),
     [switch]$WithPortableZip,
     [switch]$SkipInstaller,
+    [switch]$SkipPush,
     [switch]$DryRun
 )
 
@@ -13,22 +16,6 @@ if ($content -notmatch '<Version>\s*([^<\s]+)\s*</Version>') {
 }
 $version = $Matches[1].Trim()
 
-Write-Host "Release prep v$version"
-if ($WithPortableZip) {
-    Write-Host "WithPortableZip: ZIP also generated for local verification"
-} else {
-    Write-Host "Default: Setup installers only (fast release build)"
-}
-Write-Host ""
-
-$publishParams = @{}
-if (-not $WithPortableZip) { $publishParams.SkipZip = $true }
-if ($SkipInstaller) { $publishParams.SkipInstaller = $true }
-& (Join-Path $PSScriptRoot "publish-apps.ps1") @publishParams
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-$dist = Join-Path $root "dist"
-
 $releaseNotes = @{
     Host       = @{ Tag = "host-v$version"; Title = "KakiMoni Host v$version" }
     Client     = @{ Tag = "client-v$version"; Title = "KakiMoni Client v$version" }
@@ -36,18 +23,63 @@ $releaseNotes = @{
     SaveViewer = @{ Tag = "saveviewer-v$version"; Title = "KakiMoni Save Viewer v$version" }
 }
 
+function Resolve-ReleaseTargets {
+    param([string[]]$Names)
+    if ($Names -contains "All") {
+        return @("Host", "Client", "Layout", "SaveViewer")
+    }
+
+    $releases = [System.Collections.Generic.List[string]]::new()
+    foreach ($name in $Names) {
+        switch ($name) {
+            "Host" {
+                if (-not $releases.Contains("Host")) { $releases.Add("Host") }
+                if (-not $releases.Contains("SaveViewer")) { $releases.Add("SaveViewer") }
+            }
+            "Client" { if (-not $releases.Contains("Client")) { $releases.Add("Client") } }
+            "Layout" { if (-not $releases.Contains("Layout")) { $releases.Add("Layout") } }
+            "SaveViewer" { if (-not $releases.Contains("SaveViewer")) { $releases.Add("SaveViewer") } }
+        }
+    }
+
+    return @($releases)
+}
+
+$releaseTargets = Resolve-ReleaseTargets -Names $Target
+
+Write-Host "Release prep v$version"
+Write-Host "Targets: $($releaseTargets -join ', ')"
+if ($WithPortableZip) {
+    Write-Host "WithPortableZip: ZIP also generated for local verification"
+} else {
+    Write-Host "Default: Setup installers only (no ZIP)"
+}
+Write-Host ""
+
+$publishParams = @{
+    Target = $Target
+}
+if (-not $WithPortableZip) { $publishParams.SkipZip = $true }
+if ($SkipInstaller) { $publishParams.SkipInstaller = $true }
+& (Join-Path $PSScriptRoot "publish-apps.ps1") @publishParams
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+$dist = Join-Path $root "dist"
+
 if ($DryRun) {
     Write-Host ""
     Write-Host "DryRun complete. GitHub release not executed."
     exit 0
 }
 
-Write-Host ""
-Write-Host "Pushing commit..."
-git push origin master
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+if (-not $SkipPush) {
+    Write-Host ""
+    Write-Host "Pushing commit..."
+    git push origin master
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+}
 
-foreach ($key in @("Host", "Client", "Layout", "SaveViewer")) {
+foreach ($key in $releaseTargets) {
     $setup = Join-Path $dist "KakiMoni_${key}-$version-Setup.exe"
     $meta = $releaseNotes[$key]
     if (-not (Test-Path $setup)) {
@@ -62,7 +94,7 @@ foreach ($key in @("Host", "Client", "Layout", "SaveViewer")) {
 
 Write-Host ""
 Write-Host "Done. Releases:"
-foreach ($key in @("Host", "Client", "Layout", "SaveViewer")) {
+foreach ($key in $releaseTargets) {
     $tag = $releaseNotes[$key].Tag
     Write-Host "  https://github.com/honi0907/kakipen/releases/tag/$tag"
 }
