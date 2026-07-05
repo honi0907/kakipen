@@ -1,5 +1,7 @@
 namespace KakiMoni.Server.Services;
 
+using KakiMoni.Core.Paths;
+
 public sealed class SaveGalleryLiveService : IDisposable
 {
     private readonly object _gate = new();
@@ -12,12 +14,13 @@ public sealed class SaveGalleryLiveService : IDisposable
 
     public void Start(string contentRoot)
     {
+        _ = contentRoot;
         lock (_gate)
         {
             if (_started)
                 return;
 
-            var savesDir = Path.Combine(contentRoot, "saves");
+            var savesDir = ContentRootResolver.SavesPath;
             Directory.CreateDirectory(savesDir);
             WatchDirectory(savesDir);
 

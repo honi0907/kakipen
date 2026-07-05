@@ -1,4 +1,5 @@
 using KakiMoni.Core.Models;
+using KakiMoni.Core.Paths;
 using KakiMoni.Server.Hubs;
 using KakiMoni.Server.Services;
 using Microsoft.AspNetCore.Builder;
@@ -23,7 +24,7 @@ public sealed class ServerBootstrap : IAsyncDisposable
             return;
 
         Port = port;
-        Directory.CreateDirectory(Path.Combine(contentRoot, "saves"));
+        Directory.CreateDirectory(ContentRootResolver.SavesPath);
 
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {

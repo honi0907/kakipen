@@ -39,7 +39,47 @@ public static class ContentRootResolver
 
     public static string AssetsPath => Path.Combine(Resolve(), "assets");
 
-    public static string SavesPath => Path.Combine(Resolve(), "saves");
+    /// <summary>
+    /// 保存画像・セッション状態。開発時はリポジトリ直下の saves/、
+    /// Program Files インストール時は %LocalAppData%\KakiMoni\saves（書き込み可能）。
+    /// </summary>
+    public static string SavesPath
+    {
+        get
+        {
+            var root = Resolve();
+            if (!IsProtectedInstallDirectory(root))
+                return Path.Combine(root, "saves");
+
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "KakiMoni",
+                "saves");
+        }
+    }
+
+    private static bool IsProtectedInstallDirectory(string dir)
+    {
+        var full = Path.GetFullPath(dir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        foreach (var baseDir in new[]
+                 {
+                     Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                     Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
+                 })
+        {
+            if (string.IsNullOrWhiteSpace(baseDir))
+                continue;
+
+            var baseFull = Path.GetFullPath(baseDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (full.Equals(baseFull, StringComparison.OrdinalIgnoreCase)
+                || full.StartsWith(baseFull + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
 
 

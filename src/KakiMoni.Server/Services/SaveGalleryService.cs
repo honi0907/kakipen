@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using KakiMoni.Core.Models;
+using KakiMoni.Core.Paths;
 
 namespace KakiMoni.Server.Services;
 
@@ -13,7 +14,8 @@ public sealed class SaveGalleryService
 
     public SaveGalleryService(string contentRoot)
     {
-        _savesDir = Path.Combine(contentRoot, "saves");
+        _ = contentRoot;
+        _savesDir = ContentRootResolver.SavesPath;
         Directory.CreateDirectory(_savesDir);
     }
 

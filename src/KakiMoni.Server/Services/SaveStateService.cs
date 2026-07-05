@@ -1,5 +1,6 @@
 using System.Text.Json;
 using KakiMoni.Core.Models;
+using KakiMoni.Core.Paths;
 
 namespace KakiMoni.Server.Services;
 
@@ -12,7 +13,8 @@ public sealed class SaveStateService
 
     public SaveStateService(string contentRoot)
     {
-        _savesDir = Path.Combine(contentRoot, "saves");
+        _ = contentRoot;
+        _savesDir = ContentRootResolver.SavesPath;
         _statePath = Path.Combine(_savesDir, ".state.json");
         Directory.CreateDirectory(_savesDir);
         EnsureSeatFolders();
