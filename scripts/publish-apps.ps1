@@ -98,7 +98,7 @@ $priChecks = @(
     @{ Dir = "Layout"; Pri = "KakiMoni.Layout.pri" }
 )
 foreach ($check in $priChecks) {
-    $priPath = Join-Path $dist $check.Dir $check.Pri
+    $priPath = Join-Path (Join-Path $dist $check.Dir) $check.Pri
     if (-not (Test-Path $priPath)) {
         throw "Missing WinUI resource file (app will not start): $priPath"
     }
