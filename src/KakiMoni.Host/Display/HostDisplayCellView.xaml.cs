@@ -1,3 +1,4 @@
+using KakiMoni.Core.Display;
 using KakiMoni.Core.Models;
 using KakiMoni_Host.Controls;
 using KakiMoni_Host.Drawing;
@@ -18,6 +19,9 @@ public sealed partial class HostDisplayCellView : UserControl
     private string? _loadedOverlayUrl;
     private CancellationTokenSource? _bgCts;
     private CancellationTokenSource? _overlayCts;
+    private int _bgDecodeWidth;
+    private int _choiceDecodeWidth;
+    private int _overlayDecodeWidth;
 
     public static readonly DependencyProperty ModelProperty =
         DependencyProperty.Register(nameof(Model), typeof(SeatCardModel), typeof(HostDisplayCellView),
@@ -42,11 +46,15 @@ public sealed partial class HostDisplayCellView : UserControl
     public HostDisplayCellView()
     {
         InitializeComponent();
+        SizeChanged += OnCellSizeChanged;
         Loaded += (_, _) =>
         {
             _canvasReady = true;
             ApplyFillColor();
             PreviewCanvas.Invalidate();
+            _ = UpdateBackgroundAsync();
+            _ = UpdateChoiceOverlayAsync();
+            _ = UpdateJudgeOverlayAsync();
         };
         Unloaded += (_, _) =>
         {
@@ -118,25 +126,50 @@ public sealed partial class HostDisplayCellView : UserControl
             PreviewCanvas.Invalidate();
     }
 
+    private int GetDecodeWidth() =>
+        DisplayCellImageDecode.ResolveDecodeWidth(
+            ActualWidth,
+            ActualHeight,
+            XamlRoot?.RasterizationScale ?? 1.0);
+
+    private void OnCellSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (!_canvasReady)
+            return;
+
+        var target = GetDecodeWidth();
+        if (target <= _bgDecodeWidth && target <= _choiceDecodeWidth && target <= _overlayDecodeWidth)
+            return;
+
+        _ = UpdateBackgroundAsync();
+        _ = UpdateChoiceOverlayAsync();
+        _ = UpdateJudgeOverlayAsync();
+    }
+
     private async Task UpdateBackgroundAsync()
     {
         var url = Model?.BgImageUrl;
         if (string.IsNullOrWhiteSpace(url))
         {
             _loadedBgUrl = null;
+            _bgDecodeWidth = 0;
             BackgroundImage.Source = null;
             return;
         }
 
-        if (string.Equals(_loadedBgUrl, url, StringComparison.OrdinalIgnoreCase) && BackgroundImage.Source is not null)
+        var decodeWidth = GetDecodeWidth();
+        if (string.Equals(_loadedBgUrl, url, StringComparison.OrdinalIgnoreCase)
+            && BackgroundImage.Source is not null
+            && _bgDecodeWidth >= decodeWidth)
             return;
 
         _bgCts?.Cancel();
         _bgCts = new CancellationTokenSource();
         var token = _bgCts.Token;
-        var thumb = await _images.LoadThumbnailAsync(url, 640);
+        var thumb = await _images.LoadThumbnailAsync(url, decodeWidth);
         if (token.IsCancellationRequested || Model?.BgImageUrl != url) return;
         _loadedBgUrl = url;
+        _bgDecodeWidth = decodeWidth;
         BackgroundImage.Source = thumb;
     }
 
@@ -146,17 +179,22 @@ public sealed partial class HostDisplayCellView : UserControl
         if (string.IsNullOrWhiteSpace(url))
         {
             _loadedChoiceUrl = null;
+            _choiceDecodeWidth = 0;
             ChoiceOverlayImage.Source = null;
             ChoiceOverlayImage.Visibility = Visibility.Collapsed;
             return;
         }
 
-        if (string.Equals(_loadedChoiceUrl, url, StringComparison.OrdinalIgnoreCase) && ChoiceOverlayImage.Source is not null)
+        var decodeWidth = GetDecodeWidth();
+        if (string.Equals(_loadedChoiceUrl, url, StringComparison.OrdinalIgnoreCase)
+            && ChoiceOverlayImage.Source is not null
+            && _choiceDecodeWidth >= decodeWidth)
             return;
 
-        var thumb = await _images.LoadThumbnailAsync(url, 640);
+        var thumb = await _images.LoadThumbnailAsync(url, decodeWidth);
         if (Model?.ChoiceImageUrl != url) return;
         _loadedChoiceUrl = url;
+        _choiceDecodeWidth = decodeWidth;
         ChoiceOverlayImage.Source = thumb;
         ChoiceOverlayImage.Visibility = thumb is null ? Visibility.Collapsed : Visibility.Visible;
     }
@@ -167,6 +205,7 @@ public sealed partial class HostDisplayCellView : UserControl
         if (string.IsNullOrWhiteSpace(url))
         {
             _loadedOverlayUrl = null;
+            _overlayDecodeWidth = 0;
             _overlayCts?.Cancel();
             FillJudgeOverlayImage.Source = null;
             FillJudgeOverlayImage.Visibility = Visibility.Collapsed;
@@ -175,8 +214,10 @@ public sealed partial class HostDisplayCellView : UserControl
             return;
         }
 
+        var decodeWidth = GetDecodeWidth();
         if (string.Equals(_loadedOverlayUrl, url, StringComparison.OrdinalIgnoreCase)
-            && (FillJudgeOverlayImage.Source is not null || JudgeOverlayImage.Source is not null))
+            && (FillJudgeOverlayImage.Source is not null || JudgeOverlayImage.Source is not null)
+            && _overlayDecodeWidth >= decodeWidth)
             return;
 
         _overlayCts?.Cancel();
@@ -185,10 +226,11 @@ public sealed partial class HostDisplayCellView : UserControl
 
         if (SeatPreviewRenderer.IsFillOverlayUrl(url))
         {
-            var thumb = await _images.LoadThumbnailAsync(url, 640);
+            var thumb = await _images.LoadThumbnailAsync(url, decodeWidth);
             if (token.IsCancellationRequested || Model?.OverlayImageUrl != url) return;
 
             _loadedOverlayUrl = url;
+            _overlayDecodeWidth = decodeWidth;
             JudgeOverlayImage.Source = null;
             JudgeOverlayImage.Visibility = Visibility.Collapsed;
             if (thumb is null)
@@ -206,10 +248,11 @@ public sealed partial class HostDisplayCellView : UserControl
             return;
         }
 
-        var judgeThumb = await _images.LoadThumbnailAsync(url, 640);
+        var judgeThumb = await _images.LoadThumbnailAsync(url, decodeWidth);
         if (token.IsCancellationRequested || Model?.OverlayImageUrl != url) return;
 
         _loadedOverlayUrl = url;
+        _overlayDecodeWidth = decodeWidth;
         FillJudgeOverlayImage.Source = null;
         FillJudgeOverlayImage.Visibility = Visibility.Collapsed;
         if (judgeThumb is null)
