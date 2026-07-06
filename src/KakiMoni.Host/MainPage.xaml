@@ -215,18 +215,32 @@
                                Text="未確認" />
                     <Grid HorizontalAlignment="Right"
                           ColumnSpacing="8"
+                          RowSpacing="8"
                           MaxWidth="420">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
                         <Button x:Name="OpenAssetsFolderButton"
+                                Grid.Row="0"
                                 Grid.Column="0"
                                 Content="アセットフォルダを開く"
                                 HorizontalAlignment="Stretch"
                                 Click="OnOpenAssetsFolderClick" />
-                        <Button x:Name="OnlineUpdateButton"
+                        <Button x:Name="OpenSavesFolderButton"
+                                Grid.Row="0"
                                 Grid.Column="1"
+                                Content="保存フォルダを開く"
+                                HorizontalAlignment="Stretch"
+                                Click="OnOpenSavesFolderClick" />
+                        <Button x:Name="OnlineUpdateButton"
+                                Grid.Row="1"
+                                Grid.Column="0"
+                                Grid.ColumnSpan="2"
                                 Content="親機をオンライン更新"
                                 HorizontalAlignment="Stretch"
                                 Click="OnOnlineUpdateClick" />

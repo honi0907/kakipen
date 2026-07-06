@@ -493,4 +493,12 @@ public sealed partial class MainPage : Page
 
         SetStatusInfoBar(InfoBarSeverity.Warning, "アセットフォルダを開けません", error);
     }
+
+    private void OnOpenSavesFolderClick(object sender, RoutedEventArgs e)
+    {
+        if (HostSavesFolderLauncher.TryOpen(out var error))
+            return;
+
+        SetStatusInfoBar(InfoBarSeverity.Warning, "保存フォルダを開けません", error);
+    }
 }
