@@ -19,6 +19,7 @@ public sealed partial class MainPage : Page
     private readonly TextBlock[] _seatStatusLabels = new TextBlock[10];
     private bool _seatPollInFlight;
     private bool _displayToggleBusy;
+    private bool _serverToggleBusy;
     private bool _networkUiReady;
     private bool _companelFullscreenUiReady;
 
@@ -166,8 +167,7 @@ public sealed partial class MainPage : Page
     private void RefreshUi()
     {
         var running = AppHostContext.Server.IsRunning;
-        StartButton.IsEnabled = !running;
-        StopButton.IsEnabled = running;
+        ServerToggleButton.IsEnabled = !_serverToggleBusy;
         CompanelButton.IsEnabled = running;
         DisplayToggleButton.IsEnabled = running && !_displayToggleBusy;
         PortBox.IsEnabled = !running;
@@ -191,6 +191,7 @@ public sealed partial class MainPage : Page
             _seatPollTimer.Stop();
             UpdateSeatCells(Array.Empty<SeatStatusEntry>());
             UpdateDisplayToggleLabel();
+            UpdateServerToggleLabel();
             UpdateNetworkPreview();
             ApplyLauncherButtonStyles(serverRunning: false);
             return;
@@ -216,6 +217,7 @@ public sealed partial class MainPage : Page
         }
 
         UpdateDisplayToggleLabel();
+        UpdateServerToggleLabel();
         _seatPollTimer.Start();
         _ = RefreshSeatsAsync();
         ApplyLauncherButtonStyles(serverRunning: true);
@@ -225,13 +227,13 @@ public sealed partial class MainPage : Page
     {
         if (!serverRunning)
         {
-            StopButton.ClearValue(Button.StyleProperty);
+            ServerToggleButton.Style = (Style)Application.Current.Resources["AccentButtonStyle"];
             CompanelButton.ClearValue(Button.StyleProperty);
             DisplayToggleButton.ClearValue(Button.StyleProperty);
             return;
         }
 
-        StopButton.Style = (Style)Application.Current.Resources["LauncherStopButtonStyle"];
+        ServerToggleButton.Style = (Style)Application.Current.Resources["LauncherStopButtonStyle"];
         CompanelButton.Style = (Style)Application.Current.Resources["LauncherBlueButtonStyle"];
         DisplayToggleButton.Style = (Style)Application.Current.Resources["LauncherBlueButtonStyle"];
     }
@@ -242,6 +244,17 @@ public sealed partial class MainPage : Page
         StatusInfoBar.Title = title;
         StatusInfoBar.Message = message ?? string.Empty;
         StatusInfoBar.IsOpen = true;
+    }
+
+    private void UpdateServerToggleLabel()
+    {
+        if (_serverToggleBusy)
+        {
+            ServerToggleButton.Content = AppHostContext.Server.IsRunning ? "停止中..." : "起動中...";
+            return;
+        }
+
+        ServerToggleButton.Content = AppHostContext.Server.IsRunning ? "サーバー OFF" : "サーバー ON";
     }
 
     private void UpdateDisplayToggleLabel()
@@ -359,9 +372,22 @@ public sealed partial class MainPage : Page
         Application.Current.Resources[key] as SolidColorBrush
         ?? new SolidColorBrush(ColorHelper.FromArgb(255, 128, 128, 128));
 
-    private async void OnStartClick(object sender, RoutedEventArgs e)
+    private async void OnServerToggleClick(object sender, RoutedEventArgs e)
     {
-        StartButton.IsEnabled = false;
+        if (_serverToggleBusy)
+            return;
+
+        if (AppHostContext.Server.IsRunning)
+            await StopServerAsync();
+        else
+            await StartServerAsync();
+    }
+
+    private async Task StartServerAsync()
+    {
+        _serverToggleBusy = true;
+        ServerToggleButton.IsEnabled = false;
+        UpdateServerToggleLabel();
         SetStatusInfoBar(InfoBarSeverity.Informational, "起動中...", null);
         try
         {
@@ -378,13 +404,19 @@ public sealed partial class MainPage : Page
         catch (Exception ex)
         {
             SetStatusInfoBar(InfoBarSeverity.Error, "起動失敗", ex.Message);
-            StartButton.IsEnabled = true;
+        }
+        finally
+        {
+            _serverToggleBusy = false;
+            RefreshUi();
         }
     }
 
-    private async void OnStopClick(object sender, RoutedEventArgs e)
+    private async Task StopServerAsync()
     {
-        StopButton.IsEnabled = false;
+        _serverToggleBusy = true;
+        ServerToggleButton.IsEnabled = false;
+        UpdateServerToggleLabel();
         try
         {
             if (AppHostContext.DisplayOutput.IsOpen)
@@ -397,6 +429,7 @@ public sealed partial class MainPage : Page
         }
         finally
         {
+            _serverToggleBusy = false;
             RefreshUi();
         }
     }

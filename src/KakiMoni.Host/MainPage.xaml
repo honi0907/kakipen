@@ -81,20 +81,14 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <Button x:Name="StartButton"
+                        <Button x:Name="ServerToggleButton"
                                 Grid.Row="0"
                                 Grid.Column="0"
-                                Content="サーバー起動"
+                                Grid.ColumnSpan="2"
+                                Content="サーバー ON"
                                 Style="{StaticResource AccentButtonStyle}"
                                 HorizontalAlignment="Stretch"
-                                Click="OnStartClick" />
-                        <Button x:Name="StopButton"
-                                Grid.Row="0"
-                                Grid.Column="1"
-                                Content="停止"
-                                HorizontalAlignment="Stretch"
-                                Click="OnStopClick"
-                                IsEnabled="False" />
+                                Click="OnServerToggleClick" />
                         <Button x:Name="CompanelButton"
                                 Grid.Row="1"
                                 Grid.Column="0"

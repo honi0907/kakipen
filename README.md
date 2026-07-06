@@ -24,7 +24,7 @@ dotnet build -c Debug -p:Platform=x64
 .\bin\x64\Debug\net8.0-windows10.0.26100.0\win-x64\KakiMoni.Host.exe
 ```
 
-1. 「サーバー起動」をクリック
+1. 「サーバー ON」をクリック
 2. 「コンパネを開く」で 10 席モニター
 
 ```powershell
@@ -35,7 +35,7 @@ dotnet build -c Debug -p:Platform=x64
 ```
 
 1. `http://localhost:3000`、席 ID、背景を選択
-2. 「サーバー接続」→「書き画面を起動」→ 描画
+2. 「サーバー ON」→「書き画面を起動」→ 描画
 
 ## Assets
 

@@ -2,10 +2,12 @@ using System.Diagnostics;
 using KakiMoni.Core.Updates;
 using KakiMoni_Client.Controls;
 using KakiMoni_Client.Services;
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Navigation;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
 
@@ -80,10 +82,43 @@ public sealed partial class SetupPage : Page
         var connected = IsServerConnected;
         ConnectionStatusBar.IsOpen = connected;
         LaunchWritingButton.IsEnabled = connected && !_connecting && !_launching;
-        ServerConnectButton.IsEnabled = !connected && !_connecting && !_launching;
-        DisconnectButton.Visibility = connected ? Visibility.Visible : Visibility.Collapsed;
-        ServerUrlBox.IsEnabled = !connected;
-        SeatIdBox.IsEnabled = !connected;
+        ServerUrlBox.IsEnabled = !connected && !_connecting;
+        SeatIdBox.IsEnabled = !connected && !_connecting;
+        UpdateServerToggleButton();
+    }
+
+    private void UpdateServerToggleButton()
+    {
+        var connected = IsServerConnected;
+
+        if (_connecting)
+        {
+            ServerToggleButton.Content = "接続中...";
+            ServerToggleButton.IsEnabled = false;
+            return;
+        }
+
+        if (_launching)
+        {
+            ServerToggleButton.IsEnabled = false;
+            ServerToggleButton.Content = connected ? "サーバー OFF" : "サーバー ON";
+            return;
+        }
+
+        ServerToggleButton.IsEnabled = true;
+        ServerToggleButton.Content = connected ? "サーバー OFF" : "サーバー ON";
+        if (connected)
+        {
+            ServerToggleButton.ClearValue(Button.StyleProperty);
+            ServerToggleButton.Background = new SolidColorBrush(ColorHelper.FromArgb(255, 220, 38, 38));
+            ServerToggleButton.Foreground = new SolidColorBrush(Colors.White);
+        }
+        else
+        {
+            ServerToggleButton.ClearValue(Button.BackgroundProperty);
+            ServerToggleButton.ClearValue(Button.ForegroundProperty);
+            ServerToggleButton.Style = (Style)Application.Current.Resources["AccentButtonStyle"];
+        }
     }
 
     private void ReloadSettingsUi()
@@ -449,14 +484,19 @@ public sealed partial class SetupPage : Page
         }
     }
 
-    private async void OnServerConnectClick(object sender, RoutedEventArgs e) =>
-        await ConnectServerAsync();
+    private async void OnServerToggleClick(object sender, RoutedEventArgs e)
+    {
+        if (_connecting || _launching)
+            return;
+
+        if (IsServerConnected)
+            await DisconnectServerAsync(showError: true);
+        else
+            await ConnectServerAsync();
+    }
 
     private async void OnLaunchWritingClick(object sender, RoutedEventArgs e) =>
         await LaunchWritingAsync();
-
-    private async void OnDisconnectClick(object sender, RoutedEventArgs e) =>
-        await DisconnectServerAsync(showError: true);
 
     private async Task ConnectServerAsync()
     {

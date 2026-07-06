@@ -274,10 +274,10 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Button x:Name="ServerConnectButton"
+                    <Button x:Name="ServerToggleButton"
                             Grid.Column="0"
-                            Content="サーバー接続"
-                            Click="OnServerConnectClick"
+                            Content="サーバー ON"
+                            Click="OnServerToggleClick"
                             HorizontalAlignment="Stretch"
                             Style="{ThemeResource AccentButtonStyle}" />
                     <Button x:Name="LaunchWritingButton"
@@ -287,11 +287,6 @@
                             HorizontalAlignment="Stretch"
                             IsEnabled="False" />
                 </Grid>
-                <Button x:Name="DisconnectButton"
-                        Content="サーバー切断"
-                        Click="OnDisconnectClick"
-                        HorizontalAlignment="Stretch"
-                        Visibility="Collapsed" />
             </StackPanel>
         </Grid>
 
