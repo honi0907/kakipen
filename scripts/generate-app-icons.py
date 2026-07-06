@@ -21,7 +21,15 @@ C_PEN = (248, 250, 252)
 C_MUTED = (100, 116, 139)
 C_WHITE = (255, 255, 255)
 
-ICO_SIZES = [(16, 16), (20, 20), (24, 24), (32, 32), (40, 40), (48, 48), (64, 64), (128, 128), (256, 256)]
+ICO_SIZES = [
+    (16, 16), (20, 20), (24, 24), (32, 32), (40, 40), (48, 48),
+    (64, 64), (72, 72), (96, 96), (128, 128), (256, 256),
+]
+
+
+def should_use_icon_mode(size: int) -> bool:
+    """タスクバー向けの簡略シルエットは小サイズのみ。デスクトップは詳細版。"""
+    return size <= 32
 
 
 def lerp(a: int, b: int, t: float) -> int:
@@ -274,12 +282,16 @@ VARIANTS: dict[str, dict] = {
 
 def render_square(meta: dict, size: int, *, icon_mode: bool | None = None) -> Image.Image:
     if icon_mode is None:
-        icon_mode = size <= 64
+        icon_mode = should_use_icon_mode(size)
 
     if icon_mode:
-        base = render_icon_background(size)
+        ss = max(2, min(4, 256 // max(size, 1)))
+        render_size = size * ss
+        base = render_icon_background(render_size)
         draw = ImageDraw.Draw(base)
-        render_symbol(draw, size, size, meta["variant"], icon_mode=True)
+        render_symbol(draw, render_size, render_size, meta["variant"], icon_mode=True)
+        if render_size != size:
+            return base.resize((size, size), Image.Resampling.LANCZOS)
         return base
 
     render_size = max(size * 4, 512)
@@ -325,9 +337,18 @@ def render_wide(meta: dict, width: int, height: int, name: str) -> Image.Image:
 
 
 def save_ico(path: Path, meta: dict) -> None:
-    """Pillow は 256px 原画 + sizes= でマルチ解像度 ICO を正しく書き出す。"""
-    master = render_square(meta, 256, icon_mode=True).convert("RGBA")
-    master.save(path, format="ICO", sizes=ICO_SIZES)
+    """各解像度を個別レンダリングしてマルチサイズ ICO にする（sizes= 一括縮小は使わない）。"""
+    ordered = sorted(ICO_SIZES, key=lambda s: s[0], reverse=True)
+    images = [
+        render_square(meta, wh[0], icon_mode=should_use_icon_mode(wh[0])).convert("RGBA")
+        for wh in ordered
+    ]
+    images[0].save(
+        path,
+        format="ICO",
+        sizes=[(im.width, im.height) for im in images],
+        append_images=images[1:],
+    )
 
 
 def write_assets(name: str) -> None:

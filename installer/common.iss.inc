@@ -66,8 +66,8 @@ Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 Source: "{#AssetsDir}\*"; DestDir: "{app}\assets"; Flags: ignoreversion recursesubdirs createallsubdirs onlyifdoesntexist
 
 [Icons]
-Name: "{group}\{#AppDisplayName}"; Filename: "{app}\{#AppExe}"; Parameters: "{#LaunchParameters}"
-Name: "{autodesktop}\{#AppDisplayName}"; Filename: "{app}\{#AppExe}"; Parameters: "{#LaunchParameters}"; Tasks: desktopicon
+Name: "{group}\{#AppDisplayName}"; Filename: "{app}\{#AppExe}"; Parameters: "{#LaunchParameters}"; IconFilename: "{app}\Assets\AppIcon.ico"
+Name: "{autodesktop}\{#AppDisplayName}"; Filename: "{app}\{#AppExe}"; Parameters: "{#LaunchParameters}"; IconFilename: "{app}\Assets\AppIcon.ico"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\{#AppExe}"; Parameters: "{#LaunchParameters}"; Description: "{#AppDisplayName} を起動する"; Flags: nowait postinstall skipifsilent
