@@ -27,6 +27,7 @@ public sealed class HostHubService : IAsyncDisposable
     public event Action<int, string>? JudgeResultReceived;
     public event Action<int, bool>? SeatWritingBlackoutReceived;
     public event Action<bool, bool>? ConnectionChanged;
+    public event Action<long>? AssetsCatalogChangedReceived;
 
     public async Task ConnectAsync(string baseUrl, CancellationToken cancellationToken = default)
     {
@@ -84,6 +85,9 @@ public sealed class HostHubService : IAsyncDisposable
 
         _connection.On<int, bool>(HostCallbacks.SeatWritingBlackout, (seatId, enabled) =>
             SeatWritingBlackoutReceived?.Invoke(seatId, enabled));
+
+        _connection.On<long>(HostCallbacks.AssetsCatalogChanged, revision =>
+            AssetsCatalogChangedReceived?.Invoke(revision));
 
         _connection.Reconnecting += _ =>
         {

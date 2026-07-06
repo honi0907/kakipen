@@ -32,6 +32,8 @@ public sealed partial class CompanelPage : Page
         .Select(_ => new SemaphoreSlim(1, 1))
         .ToArray();
     private readonly Dictionary<int, TaskCompletionSource<bool>> _blackoutConfirmations = new();
+    private readonly HostAssetCatalogRefresher _assetCatalogRefresher = new();
+    private bool _assetCatalogRefreshInFlight;
     private bool _networkUiReady;
 
     public CompanelPage()
@@ -147,6 +149,7 @@ public sealed partial class CompanelPage : Page
             _hub.JudgeResultReceived += OnJudgeResult;
             _hub.SeatWritingBlackoutReceived += OnSeatWritingBlackout;
             _hub.ConnectionChanged += OnHubConnectionChanged;
+            _hub.AssetsCatalogChangedReceived += OnAssetsCatalogChanged;
 
             await _hub.ConnectAsync(AppHostContext.Server.LocalBaseUrl);
             await SyncJudgeColorModeAsync();
@@ -193,6 +196,7 @@ public sealed partial class CompanelPage : Page
         _hub.JudgeResultReceived -= OnJudgeResult;
         _hub.SeatWritingBlackoutReceived -= OnSeatWritingBlackout;
         _hub.ConnectionChanged -= OnHubConnectionChanged;
+        _hub.AssetsCatalogChangedReceived -= OnAssetsCatalogChanged;
         await _hub.DisposeAsync();
     }
 
@@ -206,6 +210,7 @@ public sealed partial class CompanelPage : Page
         SendChoiceButton.IsEnabled = enabled;
         SettingsButton.IsEnabled = enabled;
         LayoutButton.IsEnabled = enabled;
+        RefreshAssetsButton.IsEnabled = enabled;
         LauncherButton.IsEnabled = true;
     }
 
@@ -500,6 +505,41 @@ public sealed partial class CompanelPage : Page
         await _hub.HostClearStrokesOnlyAsync(model.SeatId);
         model.ClearStrokes();
     }
+
+    private async Task RefreshAssetCatalogAsync()
+    {
+        if (_assetCatalogRefreshInFlight)
+            return;
+
+        _assetCatalogRefreshInFlight = true;
+        RefreshAssetsButton.IsEnabled = false;
+        try
+        {
+            await _assetCatalogRefresher.RefreshAsync(
+                _hub,
+                RefreshChoiceListAsync,
+                UpdateChoiceThumbPreviewAsync);
+        }
+        catch (Exception ex)
+        {
+            ConnText.Text = $"アセット再読み込み失敗: {ex.Message}";
+        }
+        finally
+        {
+            _assetCatalogRefreshInFlight = false;
+            if (AppHostContext.Server.IsRunning)
+                RefreshAssetsButton.IsEnabled = true;
+        }
+    }
+
+    private void OnAssetsCatalogChanged(long revision)
+    {
+        _ = revision;
+        DispatcherQueue.TryEnqueue(() => _ = RefreshAssetCatalogAsync());
+    }
+
+    private async void OnRefreshAssetsClick(object sender, RoutedEventArgs e) =>
+        await RefreshAssetCatalogAsync();
 
     private async Task RefreshChoiceListAsync()
     {

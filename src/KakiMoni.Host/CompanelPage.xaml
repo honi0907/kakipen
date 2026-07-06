@@ -183,6 +183,10 @@
                             Style="{StaticResource BtnStandbyStyle}"
                             Click="OnStandbyClick" />
                     <Border Width="2" Height="72" Background="#6b7280" />
+                    <Button x:Name="RefreshAssetsButton"
+                            Content="アセット再読み込み"
+                            Style="{StaticResource BtnBlueOutlineStyle}"
+                            Click="OnRefreshAssetsClick" />
                     <Button x:Name="SettingsButton"
                             Content="⚙ 設定"
                             Style="{StaticResource BtnBlueOutlineStyle}"

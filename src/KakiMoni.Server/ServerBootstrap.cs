@@ -6,6 +6,7 @@ using KakiMoni.Server.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
@@ -55,6 +56,7 @@ public sealed class ServerBootstrap : IAsyncDisposable
         builder.Services.AddSingleton(new SaveStateService(contentRoot));
         builder.Services.AddSingleton(new SaveGalleryService(contentRoot));
         builder.Services.AddSingleton<SaveGalleryLiveService>();
+        builder.Services.AddSingleton<AssetCatalogLiveService>();
         builder.Services.AddSingleton<DisplayConnectionManager>();
         builder.Services.AddSingleton<GameSessionState>();
         builder.Services.AddSingleton<SeatStateManager>();
@@ -74,6 +76,10 @@ public sealed class ServerBootstrap : IAsyncDisposable
         app.MapHub<GameHub>("/hub");
 
         app.Services.GetRequiredService<SaveGalleryLiveService>().Start(contentRoot);
+
+        var assetCatalogLive = app.Services.GetRequiredService<AssetCatalogLiveService>();
+        assetCatalogLive.Configure(app.Services.GetRequiredService<IHubContext<GameHub>>());
+        assetCatalogLive.Start(contentRoot);
 
         var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
         lifetime.ApplicationStopped.Register(OnHostStopped);
@@ -109,6 +115,15 @@ public sealed class ServerBootstrap : IAsyncDisposable
 
         var app = _app;
         _app = null;
+        try
+        {
+            app.Services.GetService<AssetCatalogLiveService>()?.Dispose();
+        }
+        catch
+        {
+            // best effort
+        }
+
         await app.StopAsync(cancellationToken);
         await app.DisposeAsync();
     }

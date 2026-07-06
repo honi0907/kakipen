@@ -805,12 +805,7 @@ public sealed partial class WritingPage : Page
         await AppServices.DisplayOutput.CloseAsync();
 
         if (_hub is not null)
-        {
-            _hub.DetachedFromDispose = false;
-            await _hub.DisconnectAsync();
-            await _hub.DisposeAsync();
-            AppServices.Hub = null;
-        }
+            _hub.DetachedFromDispose = true;
 
         var settings = AppState.ToSettings();
         settings.PenColor = settings.Palette.Count > 0 ? settings.Palette[0] : settings.PenColor;

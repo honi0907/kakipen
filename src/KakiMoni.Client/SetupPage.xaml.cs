@@ -19,6 +19,7 @@ public sealed partial class SetupPage : Page
     private CancellationTokenSource? _bgCheckCts;
     private CancellationTokenSource? _logoCheckCts;
     private bool _connecting;
+    private bool _launching;
     private bool _uiReady;
 
     public SetupPage()
@@ -36,6 +37,7 @@ public sealed partial class SetupPage : Page
 
         ReloadSettingsUi();
         _uiReady = true;
+        SyncConnectionStateFromHub();
         _ = RefreshBgStatusAsync();
         _ = RefreshLogoStatusAsync();
     }
@@ -56,9 +58,32 @@ public sealed partial class SetupPage : Page
         if (_uiReady)
         {
             ReloadSettingsUi();
+            SyncConnectionStateFromHub();
             _ = RefreshBgStatusAsync();
             _ = RefreshLogoStatusAsync();
         }
+    }
+
+    private bool IsServerConnected =>
+        AppServices.Hub is { IsConnected: true };
+
+    private void SyncConnectionStateFromHub()
+    {
+        if (!_uiReady)
+            return;
+
+        UpdateConnectionUi();
+    }
+
+    private void UpdateConnectionUi()
+    {
+        var connected = IsServerConnected;
+        ConnectionStatusBar.IsOpen = connected;
+        LaunchWritingButton.IsEnabled = connected && !_connecting && !_launching;
+        ServerConnectButton.IsEnabled = !connected && !_connecting && !_launching;
+        DisconnectButton.Visibility = connected ? Visibility.Visible : Visibility.Collapsed;
+        ServerUrlBox.IsEnabled = !connected;
+        SeatIdBox.IsEnabled = !connected;
     }
 
     private void ReloadSettingsUi()
@@ -112,6 +137,8 @@ public sealed partial class SetupPage : Page
     private void OnServerUrlChanged(object sender, RoutedEventArgs e)
     {
         if (!_uiReady) return;
+        if (IsServerConnected)
+            _ = DisconnectServerAsync(showError: false);
         _ = RefreshBgStatusAsync();
         _ = RefreshLogoStatusAsync();
     }
@@ -119,6 +146,8 @@ public sealed partial class SetupPage : Page
     private void OnSeatIdChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
     {
         if (!_uiReady || double.IsNaN(args.NewValue)) return;
+        if (IsServerConnected)
+            _ = DisconnectServerAsync(showError: false);
         _ = RefreshBgStatusAsync();
     }
 
@@ -420,12 +449,23 @@ public sealed partial class SetupPage : Page
         }
     }
 
-    private async void OnConnectClick(object sender, RoutedEventArgs e)
+    private async void OnServerConnectClick(object sender, RoutedEventArgs e) =>
+        await ConnectServerAsync();
+
+    private async void OnLaunchWritingClick(object sender, RoutedEventArgs e) =>
+        await LaunchWritingAsync();
+
+    private async void OnDisconnectClick(object sender, RoutedEventArgs e) =>
+        await DisconnectServerAsync(showError: true);
+
+    private async Task ConnectServerAsync()
     {
-        if (_connecting) return;
+        if (_connecting || IsServerConnected)
+            return;
+
         _connecting = true;
-        ConnectButton.IsEnabled = false;
         ErrorBar.IsOpen = false;
+        UpdateConnectionUi();
 
         var progress = new LaunchProgress();
         progress.BindDispatcher(DispatcherQueue);
@@ -438,10 +478,6 @@ public sealed partial class SetupPage : Page
         {
             var serverUrl = ClientApiService.NormalizeServerUrl(ServerUrlBox.Text);
             var seatId = (int)SeatIdBox.Value;
-            var writingFullscreen = WritingFullscreenCheckBox.IsChecked == true;
-            var externalOutputEnabled = ExternalOutputEnabledCheckBox.IsChecked == true;
-            var externalAutoPlacement = ExternalAutoPlacementCheckBox.IsChecked == true;
-            var externalFullscreen = ExternalFullscreenCheckBox.IsChecked == true;
 
             progress.Report("サーバー到達確認中...");
             var logoWarm = await Task.Run(async () =>
@@ -458,15 +494,7 @@ public sealed partial class SetupPage : Page
 
             progress.Report("サーバーに接続中...");
 
-            _settings.ServerUrl = serverUrl;
-            _settings.SeatId = seatId;
-            _settings.BgImageUrl = null;
-            _settings.WritingFullscreen = writingFullscreen;
-            _settings.ExternalOutputEnabled = externalOutputEnabled;
-            _settings.ExternalAutoPlacement = externalAutoPlacement;
-            _settings.ExternalFullscreen = externalFullscreen;
-            if (_settings.Palette.Count > 0)
-                _settings.PenColor = _settings.Palette[0];
+            ApplySettingsFromUi(serverUrl, seatId);
             ClientSettingsStore.Save(_settings);
             AppState.ApplySettings(_settings);
             AppState.ApplyStartupPen();
@@ -477,8 +505,6 @@ public sealed partial class SetupPage : Page
 
             hub.DetachedFromDispose = true;
             AppServices.Hub = hub;
-            AppServices.LaunchProgress = progress;
-            AppServices.BeginWritingPageLaunch();
 
             var restoredBg = hub.GetRestoredBackgroundUrl();
             if (!string.IsNullOrWhiteSpace(restoredBg))
@@ -488,16 +514,7 @@ public sealed partial class SetupPage : Page
                 ClientSettingsStore.Save(_settings);
             }
 
-            await UiThread.RunAsync(DispatcherQueue, () =>
-            {
-                HideLaunchOverlay();
-                Frame?.Navigate(typeof(WritingPage), null, new SuppressNavigationTransitionInfo());
-                return Task.CompletedTask;
-            });
-
-            await AppServices.WaitForWritingPageReadyAsync(launchTimeout.Token);
-
-            AppServices.LaunchProgress = null;
+            ConnectionStatusBar.Message = $"サーバー接続済み（席 {seatId}）。書き画面を起動できます。";
         }
         catch (Exception ex)
         {
@@ -519,9 +536,115 @@ public sealed partial class SetupPage : Page
             {
                 HideLaunchOverlay();
                 _connecting = false;
-                ConnectButton.IsEnabled = true;
+                UpdateConnectionUi();
             });
         }
+    }
+
+    private async Task LaunchWritingAsync()
+    {
+        if (_launching || !IsServerConnected || AppServices.Hub is null)
+            return;
+
+        _launching = true;
+        ErrorBar.IsOpen = false;
+        UpdateConnectionUi();
+
+        using var launchTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+
+        try
+        {
+            var serverUrl = ClientApiService.NormalizeServerUrl(ServerUrlBox.Text);
+            var seatId = (int)SeatIdBox.Value;
+            ApplySettingsFromUi(serverUrl, seatId);
+            ClientSettingsStore.Save(_settings);
+            AppState.ApplySettings(_settings);
+            AppState.ApplyStartupPen();
+
+            var hub = AppServices.Hub;
+            hub.DetachedFromDispose = true;
+
+            var restoredBg = hub.GetRestoredBackgroundUrl();
+            if (!string.IsNullOrWhiteSpace(restoredBg))
+            {
+                _settings.BgImageUrl = restoredBg;
+                AppState.BgImageUrl = restoredBg;
+                ClientSettingsStore.Save(_settings);
+            }
+
+            var progress = new LaunchProgress();
+            progress.BindDispatcher(DispatcherQueue);
+            AppServices.LaunchProgress = progress;
+            AppServices.BeginWritingPageLaunch();
+
+            await EnqueueAsync(() =>
+            {
+                Frame?.Navigate(typeof(WritingPage), null, new SuppressNavigationTransitionInfo());
+            });
+
+            await AppServices.WaitForWritingPageReadyAsync(launchTimeout.Token);
+            AppServices.LaunchProgress = null;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Setup] Launch writing failed: {ex}");
+            AppServices.LaunchProgress = null;
+            await EnqueueAsync(() =>
+            {
+                ErrorBar.Message = ClientConnectionErrors.Describe(ex);
+                ErrorBar.IsOpen = true;
+            });
+        }
+        finally
+        {
+            await EnqueueAsync(() =>
+            {
+                _launching = false;
+                UpdateConnectionUi();
+            });
+        }
+    }
+
+    private async Task DisconnectServerAsync(bool showError)
+    {
+        if (AppServices.Hub is not { } hub)
+        {
+            UpdateConnectionUi();
+            return;
+        }
+
+        try
+        {
+            hub.DetachedFromDispose = false;
+            await hub.DisconnectAsync();
+            await hub.DisposeAsync();
+        }
+        catch (Exception ex)
+        {
+            if (showError)
+            {
+                ErrorBar.Message = $"切断に失敗しました: {ex.Message}";
+                ErrorBar.IsOpen = true;
+            }
+        }
+        finally
+        {
+            AppServices.Hub = null;
+            await EnqueueAsync(UpdateConnectionUi);
+        }
+    }
+
+    private void ApplySettingsFromUi(string serverUrl, int seatId)
+    {
+        _settings.ServerUrl = serverUrl;
+        _settings.SeatId = seatId;
+        _settings.BgImageUrl = null;
+        _settings.WritingFullscreen = WritingFullscreenCheckBox.IsChecked == true;
+        _settings.ExternalOutputEnabled = ExternalOutputEnabledCheckBox.IsChecked == true;
+        _settings.ExternalAutoPlacement = ExternalAutoPlacementCheckBox.IsChecked == true;
+        _settings.ExternalFullscreen = ExternalFullscreenCheckBox.IsChecked == true;
+        if (_settings.Palette.Count > 0)
+            _settings.PenColor = _settings.Palette[0];
     }
 
     private Task EnqueueAsync(Action action)

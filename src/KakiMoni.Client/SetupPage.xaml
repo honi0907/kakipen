@@ -265,11 +265,33 @@
                     </StackPanel>
                 </Border>
                 <InfoBar x:Name="ErrorBar" IsOpen="False" Severity="Error" />
-                <Button x:Name="ConnectButton"
-                        Content="接続してスタート"
-                        Click="OnConnectClick"
+                <InfoBar x:Name="ConnectionStatusBar"
+                         IsOpen="False"
+                         Severity="Success"
+                         Message="サーバーに接続済みです。書き画面を起動できます。" />
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="ServerConnectButton"
+                            Grid.Column="0"
+                            Content="サーバー接続"
+                            Click="OnServerConnectClick"
+                            HorizontalAlignment="Stretch"
+                            Style="{ThemeResource AccentButtonStyle}" />
+                    <Button x:Name="LaunchWritingButton"
+                            Grid.Column="1"
+                            Content="書き画面を起動"
+                            Click="OnLaunchWritingClick"
+                            HorizontalAlignment="Stretch"
+                            IsEnabled="False" />
+                </Grid>
+                <Button x:Name="DisconnectButton"
+                        Content="サーバー切断"
+                        Click="OnDisconnectClick"
                         HorizontalAlignment="Stretch"
-                        Style="{ThemeResource AccentButtonStyle}" />
+                        Visibility="Collapsed" />
             </StackPanel>
         </Grid>
 

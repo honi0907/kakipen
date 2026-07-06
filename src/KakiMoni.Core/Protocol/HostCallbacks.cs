@@ -19,4 +19,5 @@ public static class HostCallbacks
     public const string SeatHidden = "SeatHidden";
     public const string JudgeResult = "JudgeResult";
     public const string SeatWritingBlackout = "SeatWritingBlackout";
+    public const string AssetsCatalogChanged = "AssetsCatalogChanged";
 }

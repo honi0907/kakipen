@@ -35,7 +35,7 @@ dotnet build -c Debug -p:Platform=x64
 ```
 
 1. `http://localhost:3000`、席 ID、背景を選択
-2. 「接続してスタート」→ 描画
+2. 「サーバー接続」→「書き画面を起動」→ 描画
 
 ## Assets
 
