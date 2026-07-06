@@ -62,7 +62,8 @@ Name: "desktopicon"; Description: "デスクトップにショートカットを
 
 [Files]
 Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#AssetsDir}\*"; DestDir: "{app}\assets"; Flags: ignoreversion recursesubdirs createallsubdirs
+; 初回のみ同梱。既存ファイルは上書きしない（更新でカスタム assets が消えない）
+Source: "{#AssetsDir}\*"; DestDir: "{app}\assets"; Flags: ignoreversion recursesubdirs createallsubdirs onlyifdoesntexist
 
 [Icons]
 Name: "{group}\{#AppDisplayName}"; Filename: "{app}\{#AppExe}"; Parameters: "{#LaunchParameters}"
