@@ -85,7 +85,20 @@ public sealed partial class SeatCardView : UserControl
         _previewHeight = h;
         PreviewFrame.Width = w;
         PreviewFrame.Height = h;
+        UpdateSeatNameOverlay();
         RequestPreviewRefresh();
+    }
+
+    private void UpdateSeatNameOverlay()
+    {
+        var seatId = Model?.SeatId ?? 1;
+        SeatNameOverlayUi.Apply(
+            SeatNameOverlay,
+            SeatNameOverlayText,
+            SeatNameOverlayUi.GetStyle(seatId),
+            Model?.RawSeatName,
+            _previewWidth,
+            _previewHeight);
     }
 
     private static void OnModelChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -112,8 +125,12 @@ public sealed partial class SeatCardView : UserControl
             or nameof(SeatCardModel.Status)
             or nameof(SeatCardModel.IsSelected)
             or nameof(SeatCardModel.Revealed)
-            or nameof(SeatCardModel.DisplayName))
+            or nameof(SeatCardModel.DisplayName)
+            or nameof(SeatCardModel.RawSeatName))
             RequestPreviewRefresh();
+
+        if (e.PropertyName is nameof(SeatCardModel.RawSeatName))
+            UpdateSeatNameOverlay();
 
         if (e.PropertyName is nameof(SeatCardModel.BgImageUrl))
             _ = UpdateBackgroundAsync();
@@ -252,7 +269,11 @@ public sealed partial class SeatCardView : UserControl
         RequestPreviewRefresh();
     }
 
-    public void InvalidatePreview() => RequestPreviewRefresh();
+    public void InvalidatePreview()
+    {
+        UpdateSeatNameOverlay();
+        RequestPreviewRefresh();
+    }
 
     private void BindLabels()
     {
@@ -303,6 +324,8 @@ public sealed partial class SeatCardView : UserControl
             CardBorder.BorderBrush = new SolidColorBrush(Color.FromArgb(255, 75, 85, 99));
             CardBorder.BorderThickness = new Thickness(1);
         }
+
+        UpdateSeatNameOverlay();
     }
 
     private void PreviewCanvas_Draw(CanvasControl sender, CanvasDrawEventArgs args)

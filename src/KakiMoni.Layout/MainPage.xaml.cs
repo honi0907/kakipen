@@ -42,12 +42,39 @@ public sealed partial class MainPage : Page
         AppLayoutContext.Hub.ConnectionChanged += OnHubConnectionChanged;
     }
 
+    private void OnNavSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (NavList.SelectedItem is not ListViewItem item || item.Tag is not string sectionId)
+            return;
+
+        ShowSection(sectionId);
+    }
+
+    private void ShowSection(string sectionId)
+    {
+        ConnectionSection.Visibility = sectionId == "connection" ? Visibility.Visible : Visibility.Collapsed;
+        OutputSection.Visibility = sectionId == "output" ? Visibility.Visible : Visibility.Collapsed;
+        LayoutSection.Visibility = sectionId == "layout" ? Visibility.Visible : Visibility.Collapsed;
+        UpdateSection.Visibility = sectionId == "update" ? Visibility.Visible : Visibility.Collapsed;
+
+        DetailTitleText.Text = sectionId switch
+        {
+            "connection" => "接続",
+            "output" => "外部出力",
+            "layout" => "レイアウト編集",
+            "update" => "アプリ更新",
+            _ => string.Empty
+        };
+    }
+
     private void OnUnloaded(object sender, RoutedEventArgs e) => CancelAutoConnect();
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         VersionText.Text = AppVersionDisplay.Label;
         ServerUrlBox.Text = _settings.ServerUrl;
+        NavList.SelectedIndex = 0;
+        ShowSection("connection");
         PopulateMonitors();
         SelectMonitor(Monitor0Box, _settings.Display0Monitor);
         SelectMonitor(Monitor1Box, _settings.Display1Monitor);

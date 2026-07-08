@@ -17,7 +17,9 @@
             <SolidColorBrush x:Key="SvPanelBgBrush" Color="#0c1626" />
             <SolidColorBrush x:Key="SvPanelBorderBrush" Color="#27415f" />
 
-            <Style x:Key="SvToolbarButtonStyle" TargetType="Button">
+            <Style x:Key="SvToolbarButtonStyle"
+                   TargetType="Button"
+                   BasedOn="{StaticResource RaisedToolbarButtonStyle}">
                 <Setter Property="Background" Value="#1b2c47" />
                 <Setter Property="Foreground" Value="{StaticResource SvTextBrush}" />
                 <Setter Property="BorderBrush" Value="{StaticResource SvFieldBorderBrush}" />

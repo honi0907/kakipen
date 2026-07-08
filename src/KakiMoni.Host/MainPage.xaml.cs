@@ -33,6 +33,27 @@ public sealed partial class MainPage : Page
         BuildSeatGrid();
     }
 
+    private void OnNavSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (NavList.SelectedItem is not ListViewItem item || item.Tag is not string sectionId)
+            return;
+
+        ShowSection(sectionId);
+    }
+
+    private void ShowSection(string sectionId)
+    {
+        ServerSection.Visibility = sectionId == "server" ? Visibility.Visible : Visibility.Collapsed;
+        OtherSection.Visibility = sectionId == "other" ? Visibility.Visible : Visibility.Collapsed;
+
+        DetailTitleText.Text = sectionId switch
+        {
+            "server" => "サーバー",
+            "other" => "その他",
+            _ => string.Empty
+        };
+    }
+
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         StartupText.Text = $"[Startup] MainPage Loaded {_startup.ElapsedMilliseconds}ms";
@@ -41,6 +62,8 @@ public sealed partial class MainPage : Page
         AppHostContext.Server.StateChanged += OnServerStateChanged;
         InitializeNetworkUi();
         InitializeCompanelFullscreenUi();
+        NavList.SelectedIndex = 0;
+        ShowSection("server");
         RefreshUi();
     }
 
@@ -397,8 +420,7 @@ public sealed partial class MainPage : Page
             await AppHostContext.Server.StartAsync(
                 ContentRootResolver.Resolve(),
                 port,
-                settings,
-                settings.UseSeatNameFile);
+                settings);
             RefreshUi();
         }
         catch (Exception ex)

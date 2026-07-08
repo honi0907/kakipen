@@ -96,6 +96,8 @@ public sealed partial class HostDisplayCellView : UserControl
             _ = UpdateChoiceOverlayAsync();
         if (e.PropertyName is nameof(SeatCardModel.OverlayImageUrl))
             _ = UpdateJudgeOverlayAsync();
+        if (e.PropertyName is nameof(SeatCardModel.RawSeatName))
+            UpdateSeatNameOverlay();
     }
 
     private void ApplyFillColor()
@@ -117,7 +119,20 @@ public sealed partial class HostDisplayCellView : UserControl
         }
 
         DisconnectedOverlay.Visibility = Model.IsConnected ? Visibility.Collapsed : Visibility.Visible;
+        UpdateSeatNameOverlay();
         RequestPreviewRefresh();
+    }
+
+    private void UpdateSeatNameOverlay()
+    {
+        var seatId = Model?.SeatId ?? 1;
+        SeatNameOverlayUi.Apply(
+            SeatNameOverlay,
+            SeatNameOverlayText,
+            SeatNameOverlayUi.GetStyle(seatId),
+            Model?.RawSeatName,
+            ActualWidth,
+            ActualHeight);
     }
 
     private void RequestPreviewRefresh()
@@ -134,6 +149,7 @@ public sealed partial class HostDisplayCellView : UserControl
 
     private void OnCellSizeChanged(object sender, SizeChangedEventArgs e)
     {
+        UpdateSeatNameOverlay();
         if (!_canvasReady)
             return;
 

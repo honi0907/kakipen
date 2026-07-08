@@ -1,3 +1,4 @@
+using KakiMoni.Core.Display;
 using KakiMoni.Core.Models;
 using KakiMoni_Client.Drawing;
 using Microsoft.Graphics.Canvas;
@@ -223,7 +224,18 @@ public sealed class DisplayOutputService
 
         using var session = _mirrorSource.CreateDrawingSession(Microsoft.UI.Colors.Transparent);
         DisplaySurfaceRenderer.Draw(
-            session, w, h, bgBitmap, fillOverlayBitmap, strokes, currentStroke, AppState.ParseStrokeColor, choiceBitmap, judgeBitmap);
+            session,
+            w,
+            h,
+            bgBitmap,
+            fillOverlayBitmap,
+            strokes,
+            currentStroke,
+            AppState.ParseStrokeColor,
+            choiceBitmap,
+            judgeBitmap,
+            SeatNameOverlayResolver.Resolve(AppState.SeatNameOverlay, AppState.SeatId),
+            AppState.PlayerName);
 
         _window.SetMirrorImage(_mirrorSource);
     }

@@ -27,6 +27,7 @@ public sealed class ServerBootstrap : IAsyncDisposable
         int port,
         string bindAddress = "0.0.0.0",
         bool useSeatNameFile = false,
+        SeatNameOverlayConfig? seatNameOverlay = null,
         CancellationToken cancellationToken = default)
     {
         if (_app is not null)
@@ -67,6 +68,8 @@ public sealed class ServerBootstrap : IAsyncDisposable
 
         var session = app.Services.GetRequiredService<GameSessionState>();
         session.UseSeatNameFile = useSeatNameFile;
+        session.SeatNameOverlay = seatNameOverlay?.Clone() ?? new SeatNameOverlayConfig();
+        session.SeatNameOverlay.Normalize();
         app.Services.GetRequiredService<SeatStateManager>()
             .RefreshSeatNames(useSeatNameFile, app.Services.GetRequiredService<SeatNameFileService>());
 

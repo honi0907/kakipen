@@ -1,3 +1,4 @@
+using KakiMoni.Core.Models;
 using KakiMoni.Core.Network;
 
 namespace KakiMoni_Host.Services;
@@ -21,6 +22,9 @@ public sealed class HostSettings
 
     /// <summary>assets/seat-names.txt から席名を読み込む。</summary>
     public bool UseSeatNameFile { get; set; }
+
+    /// <summary>キャンバス上の席名オーバーレイ表示スタイル。</summary>
+    public SeatNameOverlayConfig SeatNameOverlay { get; set; } = new();
 
     public HostNetworkMode NetworkMode { get; set; } = HostNetworkMode.Auto;
 

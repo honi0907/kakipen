@@ -1,6 +1,7 @@
+using KakiMoni.Core.Display;
+using KakiMoni.Core.Drawing;
 using KakiMoni_Host.Controls;
 using KakiMoni_Host.Drawing;
-using KakiMoni.Core.Drawing;
 using Microsoft.Graphics.Canvas;
 using Microsoft.UI;
 using Windows.Foundation;
@@ -90,6 +91,10 @@ public sealed class SeatSnapshotRenderer
                     var jy = (Height - jh) * 0.5f;
                     session.DrawImage(judgeBitmap, new Rect(jx, jy, jw, jh));
                 }
+
+                var overlayConfig = HostSettingsStore.Load().SeatNameOverlay;
+                var overlayStyle = SeatNameOverlayResolver.Resolve(overlayConfig, model.SeatId);
+                SeatNameOverlayRenderer.Draw(session, Width, Height, overlayStyle, model.RawSeatName);
             }
 
             using var stream = new InMemoryRandomAccessStream();

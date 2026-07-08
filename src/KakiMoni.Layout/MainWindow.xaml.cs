@@ -15,7 +15,7 @@ public sealed partial class MainWindow : Window
         AppTitleBar.Title = "KakiMoni レイアウト専用機";
         try
         {
-            AppWindow.Resize(new SizeInt32(1000, 620));
+            AppWindow.Resize(new SizeInt32(1000, 680));
         }
         catch { }
 

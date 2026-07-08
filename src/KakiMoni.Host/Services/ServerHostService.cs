@@ -1,3 +1,4 @@
+using KakiMoni.Core.Models;
 using KakiMoni.Core.Network;
 using KakiMoni.Server;
 
@@ -34,12 +35,17 @@ public sealed class ServerHostService
         string contentRoot,
         int port,
         HostSettings networkSettings,
-        bool useSeatNameFile = false,
         CancellationToken cancellationToken = default)
     {
         _lastStopMessage = null;
         var bindAddress = HostNetworkService.ResolveBindAddress(networkSettings);
-        await _bootstrap.StartAsync(contentRoot, port, bindAddress, useSeatNameFile, cancellationToken);
+        await _bootstrap.StartAsync(
+            contentRoot,
+            port,
+            bindAddress,
+            networkSettings.UseSeatNameFile,
+            networkSettings.SeatNameOverlay?.Clone(),
+            cancellationToken);
         _localBaseUrl = LanAddressResolver.BuildLocalBaseUrl(port);
         _childBaseUrl = HostNetworkService.BuildChildBaseUrl(port, networkSettings);
         StateChanged?.Invoke(this, EventArgs.Empty);

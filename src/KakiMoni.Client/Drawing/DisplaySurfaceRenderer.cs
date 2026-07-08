@@ -17,7 +17,9 @@ public static class DisplaySurfaceRenderer
         StrokeData? currentStroke,
         Func<string, Color> parseColor,
         CanvasBitmap? choiceBitmap = null,
-        CanvasBitmap? judgeBitmap = null)
+        CanvasBitmap? judgeBitmap = null,
+        SeatNameOverlayStyle? seatNameOverlay = null,
+        string? seatName = null)
     {
         session.Clear(Microsoft.UI.Colors.White);
 
@@ -59,6 +61,9 @@ public static class DisplaySurfaceRenderer
             var jy = (height - jh) * 0.5f;
             session.DrawImage(judgeBitmap, new Rect(jx, jy, jw, jh));
         }
+
+        if (seatNameOverlay is not null)
+            SeatNameOverlayRenderer.Draw(session, width, height, seatNameOverlay, seatName);
     }
 
     /// <summary>描画レイヤーのみ（背景・fill 判定は Image レイヤー側）。</summary>

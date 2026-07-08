@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml.Navigation;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Microsoft.UI.Xaml.Input;
 
 namespace KakiMoni_Client;
 
@@ -23,12 +24,40 @@ public sealed partial class SetupPage : Page
     private bool _connecting;
     private bool _launching;
     private bool _uiReady;
+    private bool _suppressServerUrlEvents;
 
     public SetupPage()
     {
         InitializeComponent();
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
+    }
+
+    private void OnNavSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (NavList.SelectedItem is not ListViewItem item || item.Tag is not string sectionId)
+            return;
+
+        ShowSection(sectionId);
+    }
+
+    private void ShowSection(string sectionId)
+    {
+        ConnectionSection.Visibility = sectionId == "connection" ? Visibility.Visible : Visibility.Collapsed;
+        PenSection.Visibility = sectionId == "pen" ? Visibility.Visible : Visibility.Collapsed;
+        AssetsSection.Visibility = sectionId == "assets" ? Visibility.Visible : Visibility.Collapsed;
+        DisplaySection.Visibility = sectionId == "display" ? Visibility.Visible : Visibility.Collapsed;
+        UpdateSection.Visibility = sectionId == "update" ? Visibility.Visible : Visibility.Collapsed;
+
+        DetailTitleText.Text = sectionId switch
+        {
+            "connection" => "接続",
+            "pen" => "ペン",
+            "assets" => "アセット確認",
+            "display" => "表示",
+            "update" => "アプリ更新",
+            _ => string.Empty
+        };
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -38,6 +67,8 @@ public sealed partial class SetupPage : Page
         Debug.WriteLine(StartupText.Text);
 
         ReloadSettingsUi();
+        NavList.SelectedIndex = 0;
+        ShowSection("connection");
         _uiReady = true;
         SyncConnectionStateFromHub();
         _ = RefreshBgStatusAsync();
@@ -83,6 +114,8 @@ public sealed partial class SetupPage : Page
         ConnectionStatusBar.IsOpen = connected;
         LaunchWritingButton.IsEnabled = connected && !_connecting && !_launching;
         ServerUrlBox.IsEnabled = !connected && !_connecting;
+        RemoveSavedServerUrlButton.IsEnabled = !connected && !_connecting
+            && IsSavedServerUrl(ServerUrlBox.Text);
         SeatIdBox.IsEnabled = !connected && !_connecting;
         UpdateServerToggleButton();
     }
@@ -101,12 +134,12 @@ public sealed partial class SetupPage : Page
         if (_launching)
         {
             ServerToggleButton.IsEnabled = false;
-            ServerToggleButton.Content = connected ? "サーバー OFF" : "サーバー ON";
+            ServerToggleButton.Content = connected ? "サーバー OFF" : "サーバーへ接続";
             return;
         }
 
         ServerToggleButton.IsEnabled = true;
-        ServerToggleButton.Content = connected ? "サーバー OFF" : "サーバー ON";
+        ServerToggleButton.Content = connected ? "サーバー OFF" : "サーバーへ接続";
         if (connected)
         {
             ServerToggleButton.ClearValue(Button.StyleProperty);
@@ -124,10 +157,11 @@ public sealed partial class SetupPage : Page
     private void ReloadSettingsUi()
     {
         _settings = ClientSettingsStore.Load();
-        ServerUrlBox.Text = _settings.ServerUrl ?? ClientApiService.DefaultServerUrl;
+        RefreshServerUrlComboItems(_settings.ServerUrl ?? ClientApiService.DefaultServerUrl);
         SeatIdBox.Value = _settings.SeatId;
         PenSizeSlider.Value = _settings.PenSize;
         EraserSizeSlider.Value = _settings.EraserSize;
+        EraserAutoPenSecondsBox.Value = _settings.EraserAutoPenSeconds;
         WritingFullscreenCheckBox.IsChecked = _settings.WritingFullscreen;
         ExternalOutputEnabledCheckBox.IsChecked = _settings.ExternalOutputEnabled;
         ExternalAutoPlacementCheckBox.IsChecked = _settings.ExternalAutoPlacement;
@@ -169,11 +203,118 @@ public sealed partial class SetupPage : Page
         PersistSettings();
     }
 
-    private void OnServerUrlChanged(object sender, RoutedEventArgs e)
+    private void RefreshServerUrlComboItems(string? currentText = null)
+    {
+        currentText ??= ServerUrlBox.Text;
+        _suppressServerUrlEvents = true;
+        try
+        {
+            ServerUrlBox.ItemsSource = null;
+            ServerUrlBox.ItemsSource = _settings.SavedServerUrls.ToList();
+            if (!string.IsNullOrWhiteSpace(currentText))
+                ServerUrlBox.Text = currentText;
+        }
+        finally
+        {
+            _suppressServerUrlEvents = false;
+        }
+
+        UpdateRemoveSavedServerUrlButton();
+    }
+
+    private bool IsSavedServerUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return false;
+
+        var normalized = ClientApiService.NormalizeServerUrl(url.Trim());
+        return _settings.SavedServerUrls.Any(u =>
+            string.Equals(u, normalized, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void RememberServerUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return;
+
+        url = ClientApiService.NormalizeServerUrl(url.Trim());
+        _settings.SavedServerUrls.RemoveAll(u => string.Equals(u, url, StringComparison.OrdinalIgnoreCase));
+        _settings.SavedServerUrls.Insert(0, url);
+        if (_settings.SavedServerUrls.Count > 10)
+            _settings.SavedServerUrls.RemoveAt(_settings.SavedServerUrls.Count - 1);
+
+        _settings.ServerUrl = url;
+        RefreshServerUrlComboItems(url);
+    }
+
+    private void UpdateRemoveSavedServerUrlButton()
+    {
+        if (!_uiReady)
+            return;
+
+        var canEdit = !IsServerConnected && !_connecting;
+        RemoveSavedServerUrlButton.IsEnabled = canEdit && IsSavedServerUrl(ServerUrlBox.Text);
+    }
+
+    private void OnSavedServerUrlSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_uiReady || _suppressServerUrlEvents || e.AddedItems.FirstOrDefault() is not string url)
+            return;
+
+        if (string.Equals(url, ServerUrlBox.Text, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        ServerUrlBox.Text = url;
+        OnServerUrlChanged();
+    }
+
+    private void OnServerUrlSubmitted(ComboBox sender, ComboBoxTextSubmittedEventArgs args)
+    {
+        if (!_uiReady)
+            return;
+
+        args.Handled = true;
+        OnServerUrlChanged();
+    }
+
+    private void OnServerUrlLosingFocus(UIElement sender, LosingFocusEventArgs args)
+    {
+        if (!_uiReady)
+            return;
+
+        OnServerUrlChanged();
+    }
+
+    private void OnRemoveSavedServerUrlClick(object sender, RoutedEventArgs e)
+    {
+        if (!_uiReady || IsServerConnected || _connecting)
+            return;
+
+        var url = ClientApiService.NormalizeServerUrl(ServerUrlBox.Text.Trim());
+        if (string.IsNullOrWhiteSpace(url))
+            return;
+
+        if (_settings.SavedServerUrls.RemoveAll(u =>
+                string.Equals(u, url, StringComparison.OrdinalIgnoreCase)) == 0)
+        {
+            return;
+        }
+
+        PersistSettings();
+        RefreshServerUrlComboItems(ServerUrlBox.Text);
+    }
+
+    private void OnServerUrlChanged()
     {
         if (!_uiReady) return;
+
+        var normalized = ClientApiService.NormalizeServerUrl(ServerUrlBox.Text.Trim());
+        if (!string.IsNullOrWhiteSpace(normalized) && !string.Equals(normalized, ServerUrlBox.Text, StringComparison.Ordinal))
+            ServerUrlBox.Text = normalized;
+
         if (IsServerConnected)
             _ = DisconnectServerAsync(showError: false);
+        UpdateRemoveSavedServerUrlButton();
         _ = RefreshBgStatusAsync();
         _ = RefreshLogoStatusAsync();
     }
@@ -433,6 +574,16 @@ public sealed partial class SetupPage : Page
         PersistSettings();
     }
 
+    private void OnEraserAutoPenSecondsChanged(NumberBox sender, NumberBoxValueChangedEventArgs e)
+    {
+        if (!_uiReady) return;
+        if (double.IsNaN(e.NewValue))
+            return;
+
+        _settings.EraserAutoPenSeconds = (int)Math.Clamp(e.NewValue, 1, 60);
+        PersistSettings();
+    }
+
     private void OnEraserSizeChanged(object sender, RangeBaseValueChangedEventArgs e)
     {
         if (!_uiReady) return;
@@ -449,7 +600,8 @@ public sealed partial class SetupPage : Page
 
     private void PersistSettings()
     {
-        _settings.ServerUrl = ClientApiService.NormalizeServerUrl(ServerUrlBox.Text.Trim());
+        var serverUrl = ClientApiService.NormalizeServerUrl(ServerUrlBox.Text.Trim());
+        RememberServerUrl(serverUrl);
         _settings.SeatId = (int)SeatIdBox.Value;
         _settings.WritingFullscreen = WritingFullscreenCheckBox.IsChecked == true;
         _settings.ExternalOutputEnabled = ExternalOutputEnabledCheckBox.IsChecked == true;
@@ -458,6 +610,7 @@ public sealed partial class SetupPage : Page
         _settings.ShowConfirmButton = ShowConfirmButtonCheckBox.IsChecked == true;
         _settings.ShowClearButton = ShowClearButtonCheckBox.IsChecked == true;
         _settings.ShowEraserTool = ShowEraserToolCheckBox.IsChecked == true;
+        _settings.EraserAutoPenSeconds = (int)Math.Clamp(EraserAutoPenSecondsBox.Value, 1, 60);
         ClientSettingsStore.Save(_settings);
     }
 
@@ -535,6 +688,7 @@ public sealed partial class SetupPage : Page
             progress.Report("サーバーに接続中...");
 
             ApplySettingsFromUi(serverUrl, seatId);
+            RememberServerUrl(serverUrl);
             ClientSettingsStore.Save(_settings);
             AppState.ApplySettings(_settings);
             AppState.ApplyStartupPen();
@@ -597,6 +751,7 @@ public sealed partial class SetupPage : Page
             var serverUrl = ClientApiService.NormalizeServerUrl(ServerUrlBox.Text);
             var seatId = (int)SeatIdBox.Value;
             ApplySettingsFromUi(serverUrl, seatId);
+            RememberServerUrl(serverUrl);
             ClientSettingsStore.Save(_settings);
             AppState.ApplySettings(_settings);
             AppState.ApplyStartupPen();

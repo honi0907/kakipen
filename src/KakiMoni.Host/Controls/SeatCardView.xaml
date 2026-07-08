@@ -82,6 +82,13 @@
                            Stretch="Uniform"
                            Visibility="Collapsed"
                            IsHitTestVisible="False" />
+                    <Border x:Name="SeatNameOverlay"
+                            Visibility="Collapsed"
+                            IsHitTestVisible="False">
+                        <TextBlock x:Name="SeatNameOverlayText"
+                                   TextWrapping="NoWrap"
+                                   FontWeight="SemiBold" />
+                    </Border>
                     <TextBlock x:Name="PlaceholderText"
                                Text="未接続"
                                FontSize="11"

@@ -95,6 +95,10 @@
 
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\KakiMoni.WinUi.Shared\SeatNameOverlayTextHost.cs" Link="Shared\SeatNameOverlayTextHost.cs" />
+  </ItemGroup>
+
 
 
   <PropertyGroup>

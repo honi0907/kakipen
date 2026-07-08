@@ -1,5 +1,4 @@
 using KakiMoni.Core.Models;
-using KakiMoni.Core.Models;
 using KakiMoni_Host.Controls;
 using KakiMoni_Host.Services;
 using Microsoft.UI.Xaml;
@@ -123,6 +122,15 @@ public sealed partial class HostDisplayWindow : Window
             view.Width = width;
             view.Height = height;
             CellsCanvas.Children.Add(view);
+        }
+    }
+
+    public void RefreshSeatNameOverlays()
+    {
+        foreach (var child in CellsCanvas.Children)
+        {
+            if (child is HostDisplayCellView cell)
+                cell.RefreshUi();
         }
     }
 }

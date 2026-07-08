@@ -22,4 +22,5 @@ public static class ClientCallbacks
     public const string WritingBlackout = "WritingBlackout";
     public const string JudgeColorMode = "JudgeColorMode";
     public const string LockOverlayOpacity = "LockOverlayOpacity";
+    public const string SeatNameOverlay = "SeatNameOverlay";
 }

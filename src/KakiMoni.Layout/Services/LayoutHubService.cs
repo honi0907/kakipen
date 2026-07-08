@@ -85,6 +85,14 @@ public sealed class LayoutHubService : IAsyncDisposable
         _connection.On<int, string>(HostCallbacks.JudgeResult, seats.SetOverlay);
         _connection.On<int, bool>(HostCallbacks.SeatWritingBlackout, seats.SetWritingBlackout);
 
+        _connection.On<SeatNameOverlayConfig>(ClientCallbacks.SeatNameOverlay, config =>
+        {
+            var normalized = config ?? new SeatNameOverlayConfig();
+            normalized.Normalize();
+            AppLayoutContext.SeatNameOverlay = normalized;
+            AppLayoutContext.DisplayOutput.RefreshSeatNameOverlays();
+        });
+
         _connection.On<string, HostDisplayLayout>(LayoutCallbacks.DisplayLayoutChanged, (group, layout) =>
         {
             AppLayoutContext.SetSlotLayout(group, layout);

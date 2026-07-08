@@ -62,6 +62,7 @@ public sealed class GameHub : Hub
         await Groups.AddToGroupAsync(Context.ConnectionId, HostsGroup);
         await Clients.Caller.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
         await Clients.Caller.SendAsync(HostCallbacks.ChoiceChanged, _session.CurrentChoiceUrl ?? string.Empty);
+        await Clients.Caller.SendAsync(ClientCallbacks.SeatNameOverlay, _session.SeatNameOverlay);
     }
 
     public async Task RegisterLayoutController()
@@ -69,6 +70,7 @@ public sealed class GameHub : Hub
         await Groups.AddToGroupAsync(Context.ConnectionId, LayoutControllersGroup);
         await Clients.Caller.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
         await Clients.Caller.SendAsync(HostCallbacks.ChoiceChanged, _session.CurrentChoiceUrl ?? string.Empty);
+        await Clients.Caller.SendAsync(ClientCallbacks.SeatNameOverlay, _session.SeatNameOverlay);
         foreach (var slot in LayoutDisplaySlots.All)
         {
             if (_layoutLayouts.Get(slot) is { } layout)
@@ -122,6 +124,7 @@ public sealed class GameHub : Hub
         await Clients.Caller.SendAsync(ClientCallbacks.WritingBlackout, seat.WritingBlackout);
         await Clients.Caller.SendAsync(ClientCallbacks.JudgeColorMode, _session.JudgeColorMode);
         await Clients.Caller.SendAsync(ClientCallbacks.LockOverlayOpacity, _session.LockOverlayOpacityPercent);
+        await Clients.Caller.SendAsync(ClientCallbacks.SeatNameOverlay, _session.SeatNameOverlay);
 
         await HostAndLayoutClients.SendAsync(HostCallbacks.ClientRegistered, seatId);
         await HostAndLayoutClients.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
@@ -142,6 +145,7 @@ public sealed class GameHub : Hub
             await Clients.Caller.SendAsync(ClientCallbacks.Hide);
             await Clients.Caller.SendAsync(ClientCallbacks.JudgeColorMode, _session.JudgeColorMode);
             await Clients.Caller.SendAsync(ClientCallbacks.LockOverlayOpacity, _session.LockOverlayOpacityPercent);
+            await Clients.Caller.SendAsync(ClientCallbacks.SeatNameOverlay, _session.SeatNameOverlay);
             return;
         }
 
@@ -159,6 +163,7 @@ public sealed class GameHub : Hub
             await Clients.Caller.SendAsync(ClientCallbacks.Hide);
         await Clients.Caller.SendAsync(ClientCallbacks.JudgeColorMode, _session.JudgeColorMode);
         await Clients.Caller.SendAsync(ClientCallbacks.LockOverlayOpacity, _session.LockOverlayOpacityPercent);
+        await Clients.Caller.SendAsync(ClientCallbacks.SeatNameOverlay, _session.SeatNameOverlay);
     }
 
     public async Task HostSetJudgeColorMode(bool enabled)
@@ -171,6 +176,13 @@ public sealed class GameHub : Hub
     {
         _session.LockOverlayOpacityPercent = Math.Clamp(percent, 0, 100);
         await Clients.All.SendAsync(ClientCallbacks.LockOverlayOpacity, _session.LockOverlayOpacityPercent);
+    }
+
+    public async Task HostSetSeatNameOverlay(SeatNameOverlayConfig config)
+    {
+        _session.SeatNameOverlay = config ?? new SeatNameOverlayConfig();
+        _session.SeatNameOverlay.Normalize();
+        await Clients.All.SendAsync(ClientCallbacks.SeatNameOverlay, _session.SeatNameOverlay);
     }
 
     public async Task HostSetUseSeatNameFile(bool enabled)

@@ -1,4 +1,5 @@
 using KakiMoni.Core.Drawing;
+using KakiMoni.Core.Display;
 using KakiMoni.Core.Models;
 using KakiMoni_Client.Drawing;
 using KakiMoni_Client.Controls;
@@ -46,7 +47,6 @@ public sealed partial class WritingPage : Page
     private DateTimeOffset _lastSettingsTapAt;
     private const int SettingsTapRequired = 5;
     private static readonly TimeSpan SettingsTapWindow = TimeSpan.FromSeconds(2);
-    private const int EraserAutoPenSeconds = 5;
     private Storyboard? _eraserReturnStoryboard;
     private DispatcherQueueTimer? _eraserReturnSwitchTimer;
 
@@ -136,7 +136,10 @@ public sealed partial class WritingPage : Page
     private void RestoreMainWindowLayout()
     {
         if (App.MainWindowInstance is { } main)
+        {
             ClientWindowLayout.RestoreMainWindow(main);
+            main.ApplyLauncherWindowSize();
+        }
     }
 
     private void AttachLaunchProgress()
@@ -225,6 +228,7 @@ public sealed partial class WritingPage : Page
         _hub.Cleared += OnClearAll;
         _hub.ClearedStrokesOnly += OnClearStrokesOnly;
         _hub.NameAssigned += OnNameAssigned;
+        _hub.SeatNameOverlayChanged += OnSeatNameOverlayChanged;
         _hub.ConnectionChanged += OnConnectionChanged;
         _hub.Reveal += OnDisplayReveal;
         _hub.Hide += OnDisplayHide;
@@ -235,6 +239,8 @@ public sealed partial class WritingPage : Page
         _hub.ReplayRestoredOverlay();
         _hub.ReplayRestoredWritingBlackout();
         _hub.ReplayRestoredLockOverlayOpacity();
+        _hub.ReplayRestoredSeatNameOverlay();
+        _hub.ReplayRestoredNameAssigned();
         // cover は外部出力 attach 時にロゴ有無で決める（Hub Reveal リプレイは使わない）
         ApplyRestoredBackground();
         ApplyRestoredChoice();
@@ -286,6 +292,7 @@ public sealed partial class WritingPage : Page
         _hub.Cleared -= OnClearAll;
         _hub.ClearedStrokesOnly -= OnClearStrokesOnly;
         _hub.NameAssigned -= OnNameAssigned;
+        _hub.SeatNameOverlayChanged -= OnSeatNameOverlayChanged;
         _hub.ConnectionChanged -= OnConnectionChanged;
         _hub.Reveal -= OnDisplayReveal;
         _hub.Hide -= OnDisplayHide;
@@ -543,7 +550,31 @@ public sealed partial class WritingPage : Page
         {
             AppState.PlayerName = name;
             UpdateHeader();
+            UpdateSeatNameOverlay();
         });
+    }
+
+    private void OnSeatNameOverlayChanged(SeatNameOverlayConfig config)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            AppState.SeatNameOverlay = config ?? new SeatNameOverlayConfig();
+            AppState.SeatNameOverlay.Normalize();
+            UpdateSeatNameOverlay();
+            RequestMirrorRefresh();
+        });
+    }
+
+    private void UpdateSeatNameOverlay()
+    {
+        var style = SeatNameOverlayResolver.Resolve(AppState.SeatNameOverlay, AppState.SeatId);
+        SeatNameOverlayUi.Apply(
+            SeatNameOverlay,
+            SeatNameOverlayText,
+            style,
+            AppState.PlayerName,
+            _canvasWidth,
+            _canvasHeight);
     }
 
     private void SetLocked(bool locked)
@@ -638,6 +669,7 @@ public sealed partial class WritingPage : Page
         JudgeOverlayImage.Height = _canvasHeight;
         WritingBlackoutOverlay.Width = _canvasWidth;
         WritingBlackoutOverlay.Height = _canvasHeight;
+        UpdateSeatNameOverlay();
         DrawCanvas.Invalidate();
         TryCompleteLaunch();
     }
@@ -911,7 +943,7 @@ public sealed partial class WritingPage : Page
         if (_activeTool != "eraser" || _isLocked)
             return;
 
-        var duration = TimeSpan.FromSeconds(EraserAutoPenSeconds);
+        var duration = TimeSpan.FromSeconds(AppState.EraserAutoPenSeconds);
         StopEraserReturnAnimationOnly();
 
         EraserReturnProgress.Value = 100;

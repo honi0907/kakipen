@@ -74,10 +74,26 @@ public static class ClientSettingsStore
 
         settings.PenSize = Math.Clamp(settings.PenSize, 2, 40);
         settings.EraserSize = Math.Clamp(settings.EraserSize, 4, 80);
+        settings.EraserAutoPenSeconds = Math.Clamp(settings.EraserAutoPenSeconds, 1, 60);
 
         settings.ServerUrl = string.IsNullOrWhiteSpace(settings.ServerUrl)
             ? ClientApiService.DefaultServerUrl
             : ClientApiService.NormalizeServerUrl(settings.ServerUrl);
+
+        settings.SavedServerUrls = (settings.SavedServerUrls ?? [])
+            .Where(u => !string.IsNullOrWhiteSpace(u))
+            .Select(u => ClientApiService.NormalizeServerUrl(u))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(10)
+            .ToList();
+
+        if (settings.SavedServerUrls.Count == 0)
+            settings.SavedServerUrls.Add(settings.ServerUrl);
+        else if (!settings.SavedServerUrls.Contains(settings.ServerUrl, StringComparer.OrdinalIgnoreCase))
+            settings.SavedServerUrls.Insert(0, settings.ServerUrl);
+
+        if (settings.SavedServerUrls.Count > 10)
+            settings.SavedServerUrls = settings.SavedServerUrls.Take(10).ToList();
 
         return settings;
     }

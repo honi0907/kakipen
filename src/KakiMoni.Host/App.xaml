@@ -19,7 +19,351 @@
             <SolidColorBrush x:Key="LayoutSidebarMutedBrush" Color="#94a3b8" />
             <SolidColorBrush x:Key="LayoutSidebarHintBrush" Color="#cbd5e1" />
 
-            <Style x:Key="LauncherColoredButtonStyle" TargetType="Button">
+            <LinearGradientBrush x:Key="RaisedButtonBottomLeftShadeBrush" StartPoint="1,0" EndPoint="0,1">
+                <GradientStop Color="#00000000" Offset="0" />
+                <GradientStop Color="#1A000000" Offset="0.48" />
+                <GradientStop Color="#52000000" Offset="1" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="RaisedButtonBottomEdgeShadeBrush" StartPoint="0,0" EndPoint="0,1">
+                <GradientStop Color="#00000000" Offset="0.55" />
+                <GradientStop Color="#3A000000" Offset="1" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="RaisedButtonPressedInsetBrush" StartPoint="1,0" EndPoint="0,1">
+                <GradientStop Color="#00000000" Offset="0.3" />
+                <GradientStop Color="#28000000" Offset="0.62" />
+                <GradientStop Color="#62000000" Offset="1" />
+            </LinearGradientBrush>
+
+            <Style x:Key="RaisedButtonChromeStyle" TargetType="Button">
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="CornerRadius" Value="4" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Padding" Value="8,6" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Grid x:Name="ChromeRoot">
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup x:Name="CommonStates">
+                                        <VisualState x:Name="Normal">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="RootBorder"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="1"
+                                                                 Duration="0:0:0.05" />
+                                                <DoubleAnimation Storyboard.TargetName="BottomLeftShade"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.68"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="BottomEdgeShade"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.55"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="PressedInset"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="PressScale"
+                                                                 Storyboard.TargetProperty="ScaleX"
+                                                                 To="1"
+                                                                 Duration="0:0:0.05" />
+                                                <DoubleAnimation Storyboard.TargetName="PressScale"
+                                                                 Storyboard.TargetProperty="ScaleY"
+                                                                 To="1"
+                                                                 Duration="0:0:0.05" />
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="PointerOver">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="BottomLeftShade"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.74"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="BottomEdgeShade"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.62"
+                                                                 Duration="0:0:0.08" />
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="Pressed">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="RootBorder"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.96"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="BottomLeftShade"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.9"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="BottomEdgeShade"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.78"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="PressedInset"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.52"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="PressScale"
+                                                                 Storyboard.TargetProperty="ScaleX"
+                                                                 To="0.99"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="PressScale"
+                                                                 Storyboard.TargetProperty="ScaleY"
+                                                                 To="0.99"
+                                                                 Duration="0:0:0.08" />
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="Disabled">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="ChromeRoot"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.38"
+                                                                 Duration="0:0:0" />
+                                            </Storyboard>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
+                                <Border x:Name="RootBorder"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="{TemplateBinding CornerRadius}"
+                                        VerticalAlignment="Stretch"
+                                        RenderTransformOrigin="0.5,0.5">
+                                    <Border.RenderTransform>
+                                        <ScaleTransform x:Name="PressScale" />
+                                    </Border.RenderTransform>
+                                    <Grid>
+                                        <ContentPresenter HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                          Padding="{TemplateBinding Padding}"
+                                                          Content="{TemplateBinding Content}"
+                                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                          Foreground="{TemplateBinding Foreground}" />
+                                        <Border x:Name="BottomLeftShade"
+                                                Background="{StaticResource RaisedButtonBottomLeftShadeBrush}"
+                                                CornerRadius="{TemplateBinding CornerRadius}"
+                                                Margin="1"
+                                                IsHitTestVisible="False"
+                                                Opacity="0.68" />
+                                        <Border x:Name="BottomEdgeShade"
+                                                Background="{StaticResource RaisedButtonBottomEdgeShadeBrush}"
+                                                CornerRadius="{TemplateBinding CornerRadius}"
+                                                Margin="1"
+                                                IsHitTestVisible="False"
+                                                Opacity="0.55" />
+                                        <Border x:Name="PressedInset"
+                                                Background="{StaticResource RaisedButtonPressedInsetBrush}"
+                                                CornerRadius="{TemplateBinding CornerRadius}"
+                                                Margin="1"
+                                                Opacity="0"
+                                                IsHitTestVisible="False" />
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="RaisedToggleButtonChromeStyle" TargetType="ToggleButton">
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="CornerRadius" Value="3" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Grid x:Name="ChromeRoot">
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup x:Name="CommonStates">
+                                        <VisualState x:Name="Normal">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="RootBorder"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="1"
+                                                                 Duration="0:0:0.05" />
+                                                <DoubleAnimation Storyboard.TargetName="BottomLeftShade"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.68"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="BottomEdgeShade"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.55"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="PressedInset"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="PressScale"
+                                                                 Storyboard.TargetProperty="ScaleX"
+                                                                 To="1"
+                                                                 Duration="0:0:0.05" />
+                                                <DoubleAnimation Storyboard.TargetName="PressScale"
+                                                                 Storyboard.TargetProperty="ScaleY"
+                                                                 To="1"
+                                                                 Duration="0:0:0.05" />
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="PointerOver">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="BottomLeftShade"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.74"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="BottomEdgeShade"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.62"
+                                                                 Duration="0:0:0.08" />
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="Pressed">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="RootBorder"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.96"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="BottomLeftShade"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.9"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="BottomEdgeShade"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.78"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="PressedInset"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.52"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="PressScale"
+                                                                 Storyboard.TargetProperty="ScaleX"
+                                                                 To="0.99"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="PressScale"
+                                                                 Storyboard.TargetProperty="ScaleY"
+                                                                 To="0.99"
+                                                                 Duration="0:0:0.08" />
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="Disabled">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="ChromeRoot"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.38"
+                                                                 Duration="0:0:0" />
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="Checked">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="RootBorder"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="1"
+                                                                 Duration="0:0:0" />
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="CheckedPointerOver">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="BottomLeftShade"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.74"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="BottomEdgeShade"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.62"
+                                                                 Duration="0:0:0.08" />
+                                            </Storyboard>
+                                        </VisualState>
+                                        <VisualState x:Name="CheckedPressed">
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="RootBorder"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.96"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="BottomLeftShade"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.9"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="BottomEdgeShade"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.78"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="PressedInset"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 To="0.52"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="PressScale"
+                                                                 Storyboard.TargetProperty="ScaleX"
+                                                                 To="0.99"
+                                                                 Duration="0:0:0.08" />
+                                                <DoubleAnimation Storyboard.TargetName="PressScale"
+                                                                 Storyboard.TargetProperty="ScaleY"
+                                                                 To="0.99"
+                                                                 Duration="0:0:0.08" />
+                                            </Storyboard>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
+                                <Border x:Name="RootBorder"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="{TemplateBinding CornerRadius}"
+                                        VerticalAlignment="Stretch"
+                                        RenderTransformOrigin="0.5,0.5">
+                                    <Border.RenderTransform>
+                                        <ScaleTransform x:Name="PressScale" />
+                                    </Border.RenderTransform>
+                                    <Grid>
+                                        <ContentPresenter HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                          Padding="{TemplateBinding Padding}"
+                                                          Content="{TemplateBinding Content}"
+                                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                          Foreground="{TemplateBinding Foreground}" />
+                                        <Border x:Name="BottomLeftShade"
+                                                Background="{StaticResource RaisedButtonBottomLeftShadeBrush}"
+                                                CornerRadius="{TemplateBinding CornerRadius}"
+                                                Margin="1"
+                                                IsHitTestVisible="False"
+                                                Opacity="0.68" />
+                                        <Border x:Name="BottomEdgeShade"
+                                                Background="{StaticResource RaisedButtonBottomEdgeShadeBrush}"
+                                                CornerRadius="{TemplateBinding CornerRadius}"
+                                                Margin="1"
+                                                IsHitTestVisible="False"
+                                                Opacity="0.55" />
+                                        <Border x:Name="PressedInset"
+                                                Background="{StaticResource RaisedButtonPressedInsetBrush}"
+                                                CornerRadius="{TemplateBinding CornerRadius}"
+                                                Margin="1"
+                                                Opacity="0"
+                                                IsHitTestVisible="False" />
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="RaisedToolbarButtonStyle"
+                   TargetType="Button"
+                   BasedOn="{StaticResource RaisedButtonChromeStyle}">
+                <Setter Property="Background" Value="#1e3a5f" />
+                <Setter Property="BorderBrush" Value="#3b82f6" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Padding" Value="12,8" />
+                <Setter Property="CornerRadius" Value="4" />
+                <Setter Property="FontSize" Value="13" />
+            </Style>
+
+            <Style x:Key="LauncherFlatButtonStyle" TargetType="Button">
                 <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="CornerRadius" Value="4" />
                 <Setter Property="Foreground" Value="White" />
@@ -34,25 +378,10 @@
                                     Background="{TemplateBinding Background}"
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="{TemplateBinding CornerRadius}"
-                                    RenderTransformOrigin="0.5,0.5">
-                                <Border.RenderTransform>
-                                    <TranslateTransform x:Name="PressTransform" />
-                                </Border.RenderTransform>
+                                    CornerRadius="{TemplateBinding CornerRadius}">
                                 <VisualStateManager.VisualStateGroups>
                                     <VisualStateGroup x:Name="CommonStates">
-                                        <VisualState x:Name="Normal">
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetName="RootBorder"
-                                                                 Storyboard.TargetProperty="Opacity"
-                                                                 To="1"
-                                                                 Duration="0:0:0.05" />
-                                                <DoubleAnimation Storyboard.TargetName="PressTransform"
-                                                                 Storyboard.TargetProperty="Y"
-                                                                 To="0"
-                                                                 Duration="0:0:0.05" />
-                                            </Storyboard>
-                                        </VisualState>
+                                        <VisualState x:Name="Normal" />
                                         <VisualState x:Name="PointerOver">
                                             <Storyboard>
                                                 <DoubleAnimation Storyboard.TargetName="RootBorder"
@@ -65,11 +394,7 @@
                                             <Storyboard>
                                                 <DoubleAnimation Storyboard.TargetName="RootBorder"
                                                                  Storyboard.TargetProperty="Opacity"
-                                                                 To="0.72"
-                                                                 Duration="0:0:0.05" />
-                                                <DoubleAnimation Storyboard.TargetName="PressTransform"
-                                                                 Storyboard.TargetProperty="Y"
-                                                                 To="1.5"
+                                                                 To="0.78"
                                                                  Duration="0:0:0.05" />
                                             </Storyboard>
                                         </VisualState>
@@ -95,6 +420,18 @@
                 </Setter>
             </Style>
 
+            <Style x:Key="LauncherColoredButtonStyle"
+                   TargetType="Button"
+                   BasedOn="{StaticResource LauncherFlatButtonStyle}" />
+
+            <Style x:Key="PrimaryBlueButtonStyle"
+                   TargetType="Button"
+                   BasedOn="{StaticResource RaisedToolbarButtonStyle}">
+                <Setter Property="Background" Value="#2563eb" />
+                <Setter Property="BorderBrush" Value="#3b82f6" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+            </Style>
+
             <Style x:Key="LauncherStopButtonStyle"
                    TargetType="Button"
                    BasedOn="{StaticResource LauncherColoredButtonStyle}">
@@ -107,64 +444,14 @@
                 <Setter Property="Background" Value="#2563eb" />
             </Style>
 
-            <Style x:Key="GlobalActionButtonStyle" TargetType="Button">
+            <Style x:Key="GlobalActionButtonStyle"
+                   TargetType="Button"
+                   BasedOn="{StaticResource RaisedButtonChromeStyle}">
                 <Setter Property="Width" Value="72" />
                 <Setter Property="Height" Value="72" />
-                <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="FontSize" Value="13" />
                 <Setter Property="CornerRadius" Value="3" />
                 <Setter Property="Padding" Value="2" />
-                <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="Foreground" Value="White" />
-                <Setter Property="HorizontalContentAlignment" Value="Center" />
-                <Setter Property="VerticalContentAlignment" Value="Center" />
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="RootBorder"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="{TemplateBinding CornerRadius}">
-                                <VisualStateManager.VisualStateGroups>
-                                    <VisualStateGroup x:Name="CommonStates">
-                                        <VisualState x:Name="Normal" />
-                                        <VisualState x:Name="PointerOver">
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetName="RootBorder"
-                                                                 Storyboard.TargetProperty="Opacity"
-                                                                 To="0.88"
-                                                                 Duration="0:0:0.05" />
-                                            </Storyboard>
-                                        </VisualState>
-                                        <VisualState x:Name="Pressed">
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetName="RootBorder"
-                                                                 Storyboard.TargetProperty="Opacity"
-                                                                 To="0.75"
-                                                                 Duration="0:0:0.05" />
-                                            </Storyboard>
-                                        </VisualState>
-                                        <VisualState x:Name="Disabled">
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetName="RootBorder"
-                                                                 Storyboard.TargetProperty="Opacity"
-                                                                 To="0.35"
-                                                                 Duration="0:0:0" />
-                                            </Storyboard>
-                                        </VisualState>
-                                    </VisualStateGroup>
-                                </VisualStateManager.VisualStateGroups>
-                                <ContentPresenter HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                                                  Padding="{TemplateBinding Padding}"
-                                                  Content="{TemplateBinding Content}"
-                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
-                                                  Foreground="{TemplateBinding Foreground}" />
-                            </Border>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
             </Style>
 
             <Style x:Key="CompanelSaveFieldBorderStyle" TargetType="Border">
@@ -201,123 +488,29 @@
             </Style>
 
             <!-- 席操作ボタン: Background / Border をコード側で反映 -->
-            <Style x:Key="SeatChromeButtonStyle" TargetType="Button">
+            <Style x:Key="SeatChromeButtonStyle"
+                   TargetType="Button"
+                   BasedOn="{StaticResource RaisedButtonChromeStyle}">
                 <Setter Property="MinWidth" Value="0" />
                 <Setter Property="MinHeight" Value="0" />
-                <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="FontSize" Value="13" />
                 <Setter Property="CornerRadius" Value="3" />
                 <Setter Property="Padding" Value="0" />
-                <Setter Property="Foreground" Value="White" />
                 <Setter Property="HorizontalAlignment" Value="Stretch" />
                 <Setter Property="VerticalAlignment" Value="Stretch" />
-                <Setter Property="HorizontalContentAlignment" Value="Center" />
-                <Setter Property="VerticalContentAlignment" Value="Center" />
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="RootBorder"
-                                    Background="{TemplateBinding Background}"
-                                    CornerRadius="{TemplateBinding CornerRadius}">
-                                <VisualStateManager.VisualStateGroups>
-                                    <VisualStateGroup x:Name="CommonStates">
-                                        <VisualState x:Name="Normal" />
-                                        <VisualState x:Name="PointerOver">
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetName="RootBorder"
-                                                                 Storyboard.TargetProperty="Opacity"
-                                                                 To="0.88"
-                                                                 Duration="0:0:0.05" />
-                                            </Storyboard>
-                                        </VisualState>
-                                        <VisualState x:Name="Pressed">
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetName="RootBorder"
-                                                                 Storyboard.TargetProperty="Opacity"
-                                                                 To="0.75"
-                                                                 Duration="0:0:0.05" />
-                                            </Storyboard>
-                                        </VisualState>
-                                        <VisualState x:Name="Disabled">
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetName="RootBorder"
-                                                                 Storyboard.TargetProperty="Opacity"
-                                                                 To="0.35"
-                                                                 Duration="0:0:0" />
-                                            </Storyboard>
-                                        </VisualState>
-                                    </VisualStateGroup>
-                                </VisualStateManager.VisualStateGroups>
-                                <ContentPresenter HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                                                  Padding="{TemplateBinding Padding}"
-                                                  Content="{TemplateBinding Content}"
-                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
-                                                  Foreground="{TemplateBinding Foreground}" />
-                            </Border>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
             </Style>
 
             <!-- 正誤トグル: コード側の Background をテンプレートでそのまま反映 -->
-            <Style x:Key="JudgeSeatToggleStyle" TargetType="ToggleButton">
+            <Style x:Key="JudgeSeatToggleStyle"
+                   TargetType="ToggleButton"
+                   BasedOn="{StaticResource RaisedToggleButtonChromeStyle}">
                 <Setter Property="MinWidth" Value="0" />
                 <Setter Property="MinHeight" Value="0" />
-                <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="FontSize" Value="11" />
                 <Setter Property="CornerRadius" Value="3" />
                 <Setter Property="Padding" Value="0" />
-                <Setter Property="Foreground" Value="White" />
                 <Setter Property="HorizontalAlignment" Value="Stretch" />
                 <Setter Property="VerticalAlignment" Value="Stretch" />
-                <Setter Property="HorizontalContentAlignment" Value="Center" />
-                <Setter Property="VerticalContentAlignment" Value="Center" />
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="ToggleButton">
-                            <Border x:Name="RootBorder"
-                                    Background="{TemplateBinding Background}"
-                                    CornerRadius="{TemplateBinding CornerRadius}">
-                                <VisualStateManager.VisualStateGroups>
-                                    <VisualStateGroup x:Name="CommonStates">
-                                        <VisualState x:Name="Normal" />
-                                        <VisualState x:Name="PointerOver">
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetName="RootBorder"
-                                                                 Storyboard.TargetProperty="Opacity"
-                                                                 To="0.88"
-                                                                 Duration="0:0:0.05" />
-                                            </Storyboard>
-                                        </VisualState>
-                                        <VisualState x:Name="Pressed">
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetName="RootBorder"
-                                                                 Storyboard.TargetProperty="Opacity"
-                                                                 To="0.75"
-                                                                 Duration="0:0:0.05" />
-                                            </Storyboard>
-                                        </VisualState>
-                                        <VisualState x:Name="Disabled">
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetName="RootBorder"
-                                                                 Storyboard.TargetProperty="Opacity"
-                                                                 To="0.35"
-                                                                 Duration="0:0:0" />
-                                            </Storyboard>
-                                        </VisualState>
-                                    </VisualStateGroup>
-                                </VisualStateManager.VisualStateGroups>
-                                <ContentPresenter HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                                                  Padding="{TemplateBinding Padding}"
-                                                  Content="{TemplateBinding Content}"
-                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
-                                                  Foreground="{TemplateBinding Foreground}" />
-                            </Border>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
             </Style>
 
             <Style x:Key="BtnGoStyle" TargetType="Button" BasedOn="{StaticResource GlobalActionButtonStyle}">

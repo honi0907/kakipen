@@ -4,12 +4,14 @@
 
 ## 対応フォーマット
 
-PNG（推奨・透過対応）/ JPG / WEBP / GIF
+**TIFF（アルファチャンネル付き）を基本**とします。透過合成に向いています。
+
+PNG / JPG / WEBP / GIF も利用できます。
 
 ## ファイル名に `fill` を含む場合
 
-背景全体に合成表示されます（例: `ao_fill.png`）。
+背景全体に合成表示されます（例: `ao_fill.tiff`）。
 
 ## デフォルト
 
-画像未指定時は `/overlays/incorrect/ao_fill.png` が使われます。
+画像未指定時は `/overlays/incorrect/ao_fill.tiff` が使われます（同ベース名の TIFF / PNG 等があればそちらを優先）。

@@ -13,6 +13,8 @@ public static class AppLayoutContext
 
     public static bool JudgeColorMode { get; set; }
 
+    public static SeatNameOverlayConfig SeatNameOverlay { get; set; } = new();
+
     public static readonly Dictionary<string, HostDisplayLayout> SlotLayouts = new(StringComparer.Ordinal);
 
     public static HostDisplayLayout GetSlotLayout(string slot) =>

@@ -96,4 +96,9 @@ public sealed class HostDisplayOutputService
         });
         return tcs.Task;
     }
+
+    public void RefreshSeatNameOverlays()
+    {
+        _uiQueue?.TryEnqueue(() => _window?.RefreshSeatNameOverlays());
+    }
 }

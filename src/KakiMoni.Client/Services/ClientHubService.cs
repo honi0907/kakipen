@@ -15,6 +15,8 @@ public sealed class ClientHubService : IAsyncDisposable
     private bool _restoredRevealed;
     private bool _restoredWritingBlackout;
     private int _restoredLockOverlayOpacity = 80;
+    private SeatNameOverlayConfig _restoredSeatNameOverlay = new();
+    private string _restoredPlayerName = string.Empty;
     private string _restoredAnimType = "cut";
     private string? _serverUrl;
     private int _seatId;
@@ -49,6 +51,7 @@ public sealed class ClientHubService : IAsyncDisposable
     public event Action<bool>? WritingBlackout;
     public event Action<bool>? JudgeColorModeChanged;
     public event Action<int>? LockOverlayOpacityChanged;
+    public event Action<SeatNameOverlayConfig>? SeatNameOverlayChanged;
     public event Action<string>? NameAssigned;
     public event Action? Disconnected;
     public event Action<bool, bool>? ConnectionChanged;
@@ -154,7 +157,17 @@ public sealed class ClientHubService : IAsyncDisposable
             _restoredLockOverlayOpacity = Math.Clamp(percent, 0, 100);
             LockOverlayOpacityChanged?.Invoke(_restoredLockOverlayOpacity);
         });
-        connection.On<string>(ClientCallbacks.NameAssigned, name => NameAssigned?.Invoke(name));
+        connection.On<SeatNameOverlayConfig>(ClientCallbacks.SeatNameOverlay, config =>
+        {
+            _restoredSeatNameOverlay = config ?? new SeatNameOverlayConfig();
+            _restoredSeatNameOverlay.Normalize();
+            SeatNameOverlayChanged?.Invoke(_restoredSeatNameOverlay);
+        });
+        connection.On<string>(ClientCallbacks.NameAssigned, name =>
+        {
+            _restoredPlayerName = name ?? string.Empty;
+            NameAssigned?.Invoke(_restoredPlayerName);
+        });
 
         connection.Reconnecting += _ =>
         {
@@ -380,6 +393,14 @@ public sealed class ClientHubService : IAsyncDisposable
 
     public void ReplayRestoredLockOverlayOpacity() =>
         LockOverlayOpacityChanged?.Invoke(_restoredLockOverlayOpacity);
+
+    public void ReplayRestoredSeatNameOverlay() =>
+        SeatNameOverlayChanged?.Invoke(_restoredSeatNameOverlay);
+
+    public void ReplayRestoredNameAssigned() =>
+        NameAssigned?.Invoke(_restoredPlayerName);
+
+    public string GetRestoredPlayerName() => _restoredPlayerName;
 
     public bool GetRestoredWritingBlackout() => _restoredWritingBlackout;
 

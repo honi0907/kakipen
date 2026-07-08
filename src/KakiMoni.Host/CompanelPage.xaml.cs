@@ -2,7 +2,7 @@ using KakiMoni.Core.Drawing;
 using KakiMoni.Core.Models;
 using KakiMoni_Host.Controls;
 using KakiMoni_Host.Layout;
-using KakiMoni_Host.SaveViewer;
+using KakiMoni_Host.Settings;
 using KakiMoni_Host.Services;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
@@ -155,6 +155,7 @@ public sealed partial class CompanelPage : Page
             await SyncJudgeColorModeAsync();
             await SyncLockOverlayOpacityAsync();
             await SyncUseSeatNameFileAsync();
+            await SyncSeatNameOverlayAsync();
             AppHostContext.DisplayOutput.BindSeats(_seats);
             ConnBadgeText.Text = "Hub接続済";
             ConnText.Text = string.Empty;
@@ -208,9 +209,9 @@ public sealed partial class CompanelPage : Page
         StandbyButton.IsEnabled = enabled;
         ChoiceComboBox.IsEnabled = enabled;
         SendChoiceButton.IsEnabled = enabled;
+        ClearChoiceButton.IsEnabled = enabled;
         SettingsButton.IsEnabled = enabled;
         LayoutButton.IsEnabled = enabled;
-        RefreshAssetsButton.IsEnabled = enabled;
         LauncherButton.IsEnabled = true;
     }
 
@@ -511,8 +512,10 @@ public sealed partial class CompanelPage : Page
         if (_assetCatalogRefreshInFlight)
             return;
 
+        if (!AppHostContext.Server.IsRunning || !_hub.IsConnected)
+            throw new InvalidOperationException("サーバーが起動していません。");
+
         _assetCatalogRefreshInFlight = true;
-        RefreshAssetsButton.IsEnabled = false;
         try
         {
             await _assetCatalogRefresher.RefreshAsync(
@@ -520,26 +523,27 @@ public sealed partial class CompanelPage : Page
                 RefreshChoiceListAsync,
                 UpdateChoiceThumbPreviewAsync);
         }
-        catch (Exception ex)
-        {
-            ConnText.Text = $"アセット再読み込み失敗: {ex.Message}";
-        }
         finally
         {
             _assetCatalogRefreshInFlight = false;
-            if (AppHostContext.Server.IsRunning)
-                RefreshAssetsButton.IsEnabled = true;
         }
     }
 
     private void OnAssetsCatalogChanged(long revision)
     {
         _ = revision;
-        DispatcherQueue.TryEnqueue(() => _ = RefreshAssetCatalogAsync());
+        DispatcherQueue.TryEnqueue(async () =>
+        {
+            try
+            {
+                await RefreshAssetCatalogAsync();
+            }
+            catch (Exception ex)
+            {
+                ConnText.Text = $"アセット再読み込み失敗: {ex.Message}";
+            }
+        });
     }
-
-    private async void OnRefreshAssetsClick(object sender, RoutedEventArgs e) =>
-        await RefreshAssetCatalogAsync();
 
     private async Task RefreshChoiceListAsync()
     {
@@ -617,6 +621,19 @@ public sealed partial class CompanelPage : Page
         finally
         {
             SendChoiceButton.IsEnabled = true;
+        }
+    }
+
+    private async void OnClearChoiceClick(object sender, RoutedEventArgs e)
+    {
+        ClearChoiceButton.IsEnabled = false;
+        try
+        {
+            await _hub.HostClearChoiceAsync();
+        }
+        finally
+        {
+            ClearChoiceButton.IsEnabled = true;
         }
     }
 
@@ -847,22 +864,29 @@ public sealed partial class CompanelPage : Page
         }
     }
 
-    private async void OnSettingsClick(object sender, RoutedEventArgs e)
-    {
-        if (!await HostSettingsDialog.ShowAsync(XamlRoot))
-            return;
+    private void OnSettingsClick(object sender, RoutedEventArgs e) =>
+        HostSettingsWindowHelper.ShowOrActivate(ApplyHostSettingsLiveAsync, RefreshAssetCatalogAsync);
 
+    private async Task ApplyHostSettingsLiveAsync()
+    {
         await SyncJudgeColorModeAsync();
         await SyncLockOverlayOpacityAsync();
         await SyncUseSeatNameFileAsync();
+        await SyncSeatNameOverlayAsync();
         RefreshAllSeatPreviews();
+        AppHostContext.DisplayOutput.RefreshSeatNameOverlays();
+    }
+
+    private async Task SyncSeatNameOverlayAsync()
+    {
+        if (!_hub.IsConnected)
+            return;
+
+        await _hub.HostSetSeatNameOverlayAsync(HostSettingsStore.Load().SeatNameOverlay.Clone());
     }
 
     private void OnLayoutClick(object sender, RoutedEventArgs e) =>
         LayoutEditorWindowHelper.ShowOrActivate();
-
-    private void OnSaveViewerClick(object sender, RoutedEventArgs e) =>
-        SaveViewerWindowHelper.ShowOrActivate();
 
     private async Task SyncUseSeatNameFileAsync()
     {

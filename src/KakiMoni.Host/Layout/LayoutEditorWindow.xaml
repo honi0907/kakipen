@@ -204,11 +204,13 @@
                                 <StackPanel Spacing="4">
                                     <Button x:Name="BringForwardButton"
                                             Content="前面へ"
+                                            Style="{StaticResource RaisedToolbarButtonStyle}"
                                             Click="OnBringForwardClick"
                                             HorizontalAlignment="Stretch"
                                             MinWidth="100" />
                                     <Button x:Name="SendBackwardButton"
                                             Content="背面へ"
+                                            Style="{StaticResource RaisedToolbarButtonStyle}"
                                             Click="OnSendBackwardClick"
                                             HorizontalAlignment="Stretch"
                                             MinWidth="100" />
@@ -371,10 +373,12 @@
                         </Grid.ColumnDefinitions>
                         <Button Grid.Column="0"
                                 Content="＋ パネル追加"
+                                Style="{StaticResource RaisedToolbarButtonStyle}"
                                 Click="OnAddPanelClick"
                                 HorizontalAlignment="Stretch" />
                         <Button Grid.Column="1"
                                 Content="選択を削除"
+                                Style="{StaticResource RaisedToolbarButtonStyle}"
                                 Click="OnDeletePanelClick"
                                 HorizontalAlignment="Stretch" />
                     </Grid>
@@ -440,18 +444,22 @@
                         </Grid.ColumnDefinitions>
                         <Button Grid.Column="0"
                                 Content="プリセット保存"
+                                Style="{StaticResource RaisedToolbarButtonStyle}"
                                 Click="OnSavePresetClick"
                                 HorizontalAlignment="Stretch" />
                         <Button Grid.Column="1"
                                 Content="プリセット読込"
+                                Style="{StaticResource RaisedToolbarButtonStyle}"
                                 Click="OnLoadPresetClick"
                                 HorizontalAlignment="Stretch" />
                     </Grid>
 
                     <Button Content="ディスプレイに送信"
+                            Style="{StaticResource PrimaryBlueButtonStyle}"
                             Click="OnApplyClick"
                             HorizontalAlignment="Stretch" />
                     <Button Content="閉じる"
+                            Style="{StaticResource RaisedToolbarButtonStyle}"
                             Click="OnCloseClick"
                             HorizontalAlignment="Stretch" />
                 </StackPanel>

@@ -172,6 +172,10 @@
                             Content="選択肢送信"
                             Style="{StaticResource BtnBlueOutlineStyle}"
                             Click="OnSendChoiceClick" />
+                    <Button x:Name="ClearChoiceButton"
+                            Content="選択肢解除"
+                            Style="{StaticResource BtnBlueOutlineStyle}"
+                            Click="OnClearChoiceClick" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="1"
@@ -183,10 +187,6 @@
                             Style="{StaticResource BtnStandbyStyle}"
                             Click="OnStandbyClick" />
                     <Border Width="2" Height="72" Background="#6b7280" />
-                    <Button x:Name="RefreshAssetsButton"
-                            Content="アセット再読み込み"
-                            Style="{StaticResource BtnBlueOutlineStyle}"
-                            Click="OnRefreshAssetsClick" />
                     <Button x:Name="SettingsButton"
                             Content="⚙ 設定"
                             Style="{StaticResource BtnBlueOutlineStyle}"
@@ -195,10 +195,6 @@
                             Content="レイアウト"
                             Style="{StaticResource BtnBlueOutlineStyle}"
                             Click="OnLayoutClick" />
-                    <Button x:Name="SaveViewerButton"
-                            Content="保存一覧"
-                            Style="{StaticResource BtnBlueOutlineStyle}"
-                            Click="OnSaveViewerClick" />
                     <Border Width="2" Height="72" Background="#6b7280" />
                     <Button x:Name="LauncherButton"
                             Content="ソフト終了"

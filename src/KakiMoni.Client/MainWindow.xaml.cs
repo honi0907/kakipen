@@ -7,8 +7,8 @@ namespace KakiMoni_Client;
 
 public sealed partial class MainWindow : Window
 {
-    private const int LauncherWidth = 900;
-    private const int LauncherHeight = 700;
+    private const int LauncherWidth = 980;
+    private const int LauncherHeight = 760;
 
     public MainWindow()
     {
@@ -22,7 +22,7 @@ public sealed partial class MainWindow : Window
         RootFrame.Navigate(typeof(SetupPage));
     }
 
-    private void ApplyLauncherWindowSize()
+    public void ApplyLauncherWindowSize()
     {
         try
         {

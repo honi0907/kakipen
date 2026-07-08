@@ -6,7 +6,7 @@ namespace KakiMoni.Server.Services;
 public sealed class ChoiceFileService
 {
     private static readonly string[] SupportedExtensions =
-        [".png", ".jpg", ".jpeg", ".webp", ".gif", ".tif", ".tiff"];
+        [".tif", ".tiff", ".png", ".jpg", ".jpeg", ".webp", ".gif"];
 
     private readonly string _choicesDir;
 

@@ -22,6 +22,13 @@
                Stretch="Uniform"
                Visibility="Collapsed"
                IsHitTestVisible="False" />
+        <Border x:Name="SeatNameOverlay"
+                Visibility="Collapsed"
+                IsHitTestVisible="False">
+            <TextBlock x:Name="SeatNameOverlayText"
+                       TextWrapping="NoWrap"
+                       FontWeight="SemiBold" />
+        </Border>
         <Border x:Name="DisconnectedOverlay"
                 Background="#DD111111"
                 Visibility="Collapsed">

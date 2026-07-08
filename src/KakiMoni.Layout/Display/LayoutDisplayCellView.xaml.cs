@@ -1,5 +1,6 @@
 ﻿using KakiMoni.Core.Display;
 using KakiMoni.Core.Models;
+using KakiMoni_Layout.Controls;
 using KakiMoni_Layout.Models;
 using KakiMoni_Layout.Drawing;
 using KakiMoni_Layout.Services;
@@ -87,7 +88,8 @@ public sealed partial class LayoutDisplayCellView : UserControl
     {
         if (e.PropertyName is nameof(SeatDisplayModel.Strokes)
             or nameof(SeatDisplayModel.CurrentStroke)
-            or nameof(SeatDisplayModel.IsConnected))
+            or nameof(SeatDisplayModel.IsConnected)
+            or nameof(SeatDisplayModel.RawSeatName))
             RequestPreviewRefresh();
 
         if (e.PropertyName is nameof(SeatDisplayModel.BgImageUrl))
@@ -96,6 +98,8 @@ public sealed partial class LayoutDisplayCellView : UserControl
             _ = UpdateChoiceOverlayAsync();
         if (e.PropertyName is nameof(SeatDisplayModel.OverlayImageUrl))
             _ = UpdateJudgeOverlayAsync();
+        if (e.PropertyName is nameof(SeatDisplayModel.RawSeatName))
+            UpdateSeatNameOverlay();
     }
 
     private void ApplyFillColor()
@@ -117,7 +121,20 @@ public sealed partial class LayoutDisplayCellView : UserControl
         }
 
         DisconnectedOverlay.Visibility = Model.IsConnected ? Visibility.Collapsed : Visibility.Visible;
+        UpdateSeatNameOverlay();
         RequestPreviewRefresh();
+    }
+
+    private void UpdateSeatNameOverlay()
+    {
+        var seatId = Model?.SeatId ?? 1;
+        SeatNameOverlayUi.Apply(
+            SeatNameOverlay,
+            SeatNameOverlayText,
+            SeatNameOverlayUi.GetStyle(seatId),
+            Model?.RawSeatName,
+            ActualWidth,
+            ActualHeight);
     }
 
     private void RequestPreviewRefresh()
@@ -134,6 +151,7 @@ public sealed partial class LayoutDisplayCellView : UserControl
 
     private void OnCellSizeChanged(object sender, SizeChangedEventArgs e)
     {
+        UpdateSeatNameOverlay();
         if (!_canvasReady)
             return;
 

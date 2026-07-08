@@ -28,242 +28,288 @@
 
             <Grid Grid.Row="1" ColumnSpacing="12">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" MinWidth="240" />
-                    <ColumnDefinition Width="*" MinWidth="240" />
+                    <ColumnDefinition Width="220" />
+                    <ColumnDefinition Width="*" MinWidth="400" />
                 </Grid.ColumnDefinitions>
 
-                <!-- 左: 接続・ペン・表示 -->
-                <StackPanel Grid.Column="0" Spacing="10">
-                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="12">
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="接続" FontWeight="SemiBold" />
-                            <TextBox x:Name="ServerUrlBox"
-                                     Header="サーバー URL"
-                                     PlaceholderText="http://127.0.0.1:3000"
-                                     LostFocus="OnServerUrlChanged" />
-                            <NumberBox x:Name="SeatIdBox"
-                                       Header="席 ID (1-10)"
-                                       Minimum="1"
-                                       Maximum="10"
-                                       Value="1"
-                                       SpinButtonPlacementMode="Inline"
-                                       ValueChanged="OnSeatIdChanged" />
-                        </StackPanel>
-                    </Border>
-
-                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Padding="12">
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="ペン" FontWeight="SemiBold" />
-                            <StackPanel x:Name="PalettePanel" Orientation="Horizontal" Spacing="8" />
-                            <Grid ColumnSpacing="10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Spacing="2">
-                                    <TextBlock Text="ペンの太さ" FontSize="12" Opacity="0.9" />
-                                    <Slider x:Name="PenSizeSlider"
-                                            Minimum="2"
-                                            Maximum="40"
-                                            StepFrequency="1"
-                                            ValueChanged="OnPenSizeChanged" />
-                                    <TextBlock x:Name="PenSizeLabel" FontSize="12" Opacity="0.8" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="1" Spacing="2">
-                                    <TextBlock Text="消しゴムの太さ" FontSize="12" Opacity="0.9" />
-                                    <Slider x:Name="EraserSizeSlider"
-                                            Minimum="4"
-                                            Maximum="80"
-                                            StepFrequency="1"
-                                            ValueChanged="OnEraserSizeChanged" />
-                                    <TextBlock x:Name="EraserSizeLabel" FontSize="12" Opacity="0.8" />
-                                </StackPanel>
-                            </Grid>
-                            <TextBlock Text="ツール表示" FontSize="12" Opacity="0.9" Margin="0,2,0,0" />
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <CheckBox x:Name="ShowConfirmButtonCheckBox"
-                                          Content="決定"
-                                          IsChecked="True"
-                                          Checked="OnWritingToolSettingsChanged"
-                                          Unchecked="OnWritingToolSettingsChanged" />
-                                <CheckBox x:Name="ShowClearButtonCheckBox"
-                                          Content="クリア"
-                                          IsChecked="True"
-                                          Checked="OnWritingToolSettingsChanged"
-                                          Unchecked="OnWritingToolSettingsChanged" />
-                                <CheckBox x:Name="ShowEraserToolCheckBox"
-                                          Content="消しゴム"
-                                          IsChecked="True"
-                                          Checked="OnWritingToolSettingsChanged"
-                                          Unchecked="OnWritingToolSettingsChanged" />
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-
-                <!-- 右: アセット・表示 -->
-                <StackPanel Grid.Column="1" Spacing="10">
-                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                <Border Grid.Column="0"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
-                        Padding="12"
-                        VerticalAlignment="Top">
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="アセット確認" FontWeight="SemiBold" />
-                        <TextBlock Text="backgrounds / logo フォルダに画像を配置"
-                                   FontSize="12"
-                                   Opacity="0.75" />
-
-                        <Grid ColumnSpacing="8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="背景"
-                                       VerticalAlignment="Center"
-                                       Width="36"
-                                       FontSize="12"
-                                       Opacity="0.85" />
-                            <StackPanel Grid.Column="1" Spacing="4">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <Button x:Name="RefreshBgButton"
-                                            Content="確認"
-                                            Click="OnRefreshBgClick"
-                                            Padding="12,4" />
-                                    <ProgressRing x:Name="BgCheckRing"
-                                                  Width="18"
-                                                  Height="18"
-                                                  IsActive="False"
-                                                  Visibility="Collapsed" />
-                                </StackPanel>
-                                <TextBlock x:Name="BgStatusText"
-                                           Text="席 ID と URL を入力すると確認できます。"
-                                           TextWrapping="WrapWholeWords"
-                                           FontSize="12"
-                                           Opacity="0.9" />
-                            </StackPanel>
-                            <Border x:Name="BgPreviewBorder"
-                                    Grid.Column="2"
-                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="4"
-                                    Visibility="Collapsed">
-                                <Image x:Name="BgPreviewImage"
-                                       Width="112"
-                                       Height="63"
-                                       Stretch="UniformToFill" />
-                            </Border>
-                        </Grid>
-
-                        <Border Height="1"
-                                Background="{ThemeResource DividerStrokeColorDefaultBrush}"
-                                Opacity="0.6" />
-
-                        <Grid ColumnSpacing="8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="ロゴ"
-                                       VerticalAlignment="Center"
-                                       Width="36"
-                                       FontSize="12"
-                                       Opacity="0.85" />
-                            <StackPanel Grid.Column="1" Spacing="4">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <Button x:Name="RefreshLogoButton"
-                                            Content="確認"
-                                            Click="OnRefreshLogoClick"
-                                            Padding="12,4" />
-                                    <ProgressRing x:Name="LogoCheckRing"
-                                                  Width="18"
-                                                  Height="18"
-                                                  IsActive="False"
-                                                  Visibility="Collapsed" />
-                                </StackPanel>
-                                <TextBlock x:Name="LogoStatusText"
-                                           Text="サーバー URL を入力すると確認できます。"
-                                           TextWrapping="WrapWholeWords"
-                                           FontSize="12"
-                                           Opacity="0.9" />
-                            </StackPanel>
-                            <Border x:Name="LogoPreviewBorder"
-                                    Grid.Column="2"
-                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="4"
-                                    Visibility="Collapsed">
-                                <Image x:Name="LogoPreviewImage"
-                                       Width="112"
-                                       Height="63"
-                                       Stretch="Uniform" />
-                            </Border>
-                        </Grid>
-                    </StackPanel>
+                        Padding="4">
+                    <ListView x:Name="NavList"
+                              SelectionMode="Single"
+                              IsItemClickEnabled="True"
+                              SelectionChanged="OnNavSelectionChanged">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="12,10" />
+                                <Setter Property="CornerRadius" Value="6" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListViewItem Content="接続" Tag="connection" />
+                        <ListViewItem Content="ペン" Tag="pen" />
+                        <ListViewItem Content="アセット" Tag="assets" />
+                        <ListViewItem Content="表示" Tag="display" />
+                        <ListViewItem Content="更新" Tag="update" />
+                    </ListView>
                 </Border>
 
-                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                <Border Grid.Column="1"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
-                        Padding="12">
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="表示" FontWeight="SemiBold" />
-                        <CheckBox x:Name="WritingFullscreenCheckBox"
-                                  Content="書き画面をフルスクリーン"
-                                  Checked="OnDisplaySettingsChanged"
-                                  Unchecked="OnDisplaySettingsChanged" />
-                        <CheckBox x:Name="ExternalOutputEnabledCheckBox"
-                                  Content="外部出力を使用する"
-                                  Checked="OnDisplaySettingsChanged"
-                                  Unchecked="OnDisplaySettingsChanged" />
-                        <StackPanel x:Name="ExternalOutputOptionsPanel"
-                                    Margin="24,0,0,0"
-                                    Spacing="2">
-                            <CheckBox x:Name="ExternalAutoPlacementCheckBox"
-                                      Content="拡張側に自動配置"
-                                      Checked="OnDisplaySettingsChanged"
-                                      Unchecked="OnDisplaySettingsChanged" />
-                            <CheckBox x:Name="ExternalFullscreenCheckBox"
-                                      Content="外部出力をフルスクリーン"
-                                      Checked="OnDisplaySettingsChanged"
-                                      Unchecked="OnDisplaySettingsChanged" />
-                        </StackPanel>
-                    </StackPanel>
+                        Padding="16">
+                    <Grid RowSpacing="8">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <TextBlock x:Name="DetailTitleText"
+                                   FontSize="18"
+                                   FontWeight="SemiBold" />
+                        <ScrollViewer Grid.Row="1"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel Spacing="0">
+                                <!-- 接続 -->
+                                <StackPanel x:Name="ConnectionSection" Spacing="8">
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <ComboBox x:Name="ServerUrlBox"
+                                                  Grid.Column="0"
+                                                  IsEditable="True"
+                                                  Header="サーバー URL"
+                                                  PlaceholderText="http://127.0.0.1:3000"
+                                                  HorizontalAlignment="Stretch"
+                                                  SelectionChanged="OnSavedServerUrlSelectionChanged"
+                                                  TextSubmitted="OnServerUrlSubmitted"
+                                                  LosingFocus="OnServerUrlLosingFocus" />
+                                        <Button x:Name="RemoveSavedServerUrlButton"
+                                                Grid.Column="1"
+                                                Content="削除"
+                                                VerticalAlignment="Bottom"
+                                                Margin="0,0,0,4"
+                                                Padding="10,6"
+                                                IsEnabled="False"
+                                                ToolTipService.ToolTip="表示中の URL を履歴から削除"
+                                                Click="OnRemoveSavedServerUrlClick" />
+                                    </Grid>
+                                    <NumberBox x:Name="SeatIdBox"
+                                               Header="席 ID (1-10)"
+                                               Minimum="1"
+                                               Maximum="10"
+                                               Value="1"
+                                               SpinButtonPlacementMode="Inline"
+                                               ValueChanged="OnSeatIdChanged" />
+                                </StackPanel>
+
+                                <!-- ペン -->
+                                <StackPanel x:Name="PenSection"
+                                            Spacing="8"
+                                            Visibility="Collapsed">
+                                    <StackPanel x:Name="PalettePanel" Orientation="Horizontal" Spacing="8" />
+                                    <Grid ColumnSpacing="10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Text="ペンの太さ" FontSize="12" Opacity="0.9" />
+                                            <Slider x:Name="PenSizeSlider"
+                                                    Minimum="2"
+                                                    Maximum="40"
+                                                    StepFrequency="1"
+                                                    ValueChanged="OnPenSizeChanged" />
+                                            <TextBlock x:Name="PenSizeLabel" FontSize="12" Opacity="0.8" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Spacing="2">
+                                            <TextBlock Text="消しゴムの太さ" FontSize="12" Opacity="0.9" />
+                                            <Slider x:Name="EraserSizeSlider"
+                                                    Minimum="4"
+                                                    Maximum="80"
+                                                    StepFrequency="1"
+                                                    ValueChanged="OnEraserSizeChanged" />
+                                            <TextBlock x:Name="EraserSizeLabel" FontSize="12" Opacity="0.8" />
+                                        </StackPanel>
+                                    </Grid>
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="消しゴムからペンに戻るまで（秒）"
+                                                   FontSize="12"
+                                                   Opacity="0.9" />
+                                        <NumberBox x:Name="EraserAutoPenSecondsBox"
+                                                  Minimum="1"
+                                                  Maximum="60"
+                                                  SpinButtonPlacementMode="Inline"
+                                                  ValueChanged="OnEraserAutoPenSecondsChanged" />
+                                    </StackPanel>
+                                    <TextBlock Text="ツール表示" FontSize="12" Opacity="0.9" Margin="0,2,0,0" />
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <CheckBox x:Name="ShowConfirmButtonCheckBox"
+                                                  Content="決定"
+                                                  IsChecked="True"
+                                                  Checked="OnWritingToolSettingsChanged"
+                                                  Unchecked="OnWritingToolSettingsChanged" />
+                                        <CheckBox x:Name="ShowClearButtonCheckBox"
+                                                  Content="クリア"
+                                                  IsChecked="True"
+                                                  Checked="OnWritingToolSettingsChanged"
+                                                  Unchecked="OnWritingToolSettingsChanged" />
+                                        <CheckBox x:Name="ShowEraserToolCheckBox"
+                                                  Content="消しゴム"
+                                                  IsChecked="True"
+                                                  Checked="OnWritingToolSettingsChanged"
+                                                  Unchecked="OnWritingToolSettingsChanged" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- アセット -->
+                                <StackPanel x:Name="AssetsSection"
+                                            Spacing="10"
+                                            Visibility="Collapsed">
+                                    <TextBlock Text="backgrounds / logo フォルダに画像を配置"
+                                               FontSize="12"
+                                               Opacity="0.75" />
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="背景"
+                                                   VerticalAlignment="Center"
+                                                   Width="36"
+                                                   FontSize="12"
+                                                   Opacity="0.85" />
+                                        <StackPanel Grid.Column="1" Spacing="4">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <Button x:Name="RefreshBgButton"
+                                                        Content="確認"
+                                                        Click="OnRefreshBgClick"
+                                                        Padding="12,4" />
+                                                <ProgressRing x:Name="BgCheckRing"
+                                                              Width="18"
+                                                              Height="18"
+                                                              IsActive="False"
+                                                              Visibility="Collapsed" />
+                                            </StackPanel>
+                                            <TextBlock x:Name="BgStatusText"
+                                                       Text="席 ID と URL を入力すると確認できます。"
+                                                       TextWrapping="WrapWholeWords"
+                                                       FontSize="12"
+                                                       Opacity="0.9" />
+                                        </StackPanel>
+                                        <Border x:Name="BgPreviewBorder"
+                                                Grid.Column="2"
+                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="4"
+                                                Visibility="Collapsed">
+                                            <Image x:Name="BgPreviewImage"
+                                                   Width="112"
+                                                   Height="63"
+                                                   Stretch="UniformToFill" />
+                                        </Border>
+                                    </Grid>
+                                    <Border Height="1"
+                                            Background="{ThemeResource DividerStrokeColorDefaultBrush}"
+                                            Opacity="0.6" />
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="ロゴ"
+                                                   VerticalAlignment="Center"
+                                                   Width="36"
+                                                   FontSize="12"
+                                                   Opacity="0.85" />
+                                        <StackPanel Grid.Column="1" Spacing="4">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <Button x:Name="RefreshLogoButton"
+                                                        Content="確認"
+                                                        Click="OnRefreshLogoClick"
+                                                        Padding="12,4" />
+                                                <ProgressRing x:Name="LogoCheckRing"
+                                                              Width="18"
+                                                              Height="18"
+                                                              IsActive="False"
+                                                              Visibility="Collapsed" />
+                                            </StackPanel>
+                                            <TextBlock x:Name="LogoStatusText"
+                                                       Text="サーバー URL を入力すると確認できます。"
+                                                       TextWrapping="WrapWholeWords"
+                                                       FontSize="12"
+                                                       Opacity="0.9" />
+                                        </StackPanel>
+                                        <Border x:Name="LogoPreviewBorder"
+                                                Grid.Column="2"
+                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="4"
+                                                Visibility="Collapsed">
+                                            <Image x:Name="LogoPreviewImage"
+                                                   Width="112"
+                                                   Height="63"
+                                                   Stretch="Uniform" />
+                                        </Border>
+                                    </Grid>
+                                </StackPanel>
+
+                                <!-- 表示 -->
+                                <StackPanel x:Name="DisplaySection"
+                                            Spacing="4"
+                                            Visibility="Collapsed">
+                                    <CheckBox x:Name="WritingFullscreenCheckBox"
+                                              Content="書き画面をフルスクリーン"
+                                              Checked="OnDisplaySettingsChanged"
+                                              Unchecked="OnDisplaySettingsChanged" />
+                                    <CheckBox x:Name="ExternalOutputEnabledCheckBox"
+                                              Content="外部出力を使用する"
+                                              Checked="OnDisplaySettingsChanged"
+                                              Unchecked="OnDisplaySettingsChanged" />
+                                    <StackPanel x:Name="ExternalOutputOptionsPanel"
+                                                Margin="24,0,0,0"
+                                                Spacing="2">
+                                        <CheckBox x:Name="ExternalAutoPlacementCheckBox"
+                                                  Content="拡張側に自動配置"
+                                                  Checked="OnDisplaySettingsChanged"
+                                                  Unchecked="OnDisplaySettingsChanged" />
+                                        <CheckBox x:Name="ExternalFullscreenCheckBox"
+                                                  Content="外部出力をフルスクリーン"
+                                                  Checked="OnDisplaySettingsChanged"
+                                                  Unchecked="OnDisplaySettingsChanged" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- 更新 -->
+                                <StackPanel x:Name="UpdateSection"
+                                            Spacing="8"
+                                            Visibility="Collapsed">
+                                    <TextBlock x:Name="UpdateStatusText"
+                                               Text="未確認"
+                                               FontSize="12"
+                                               Opacity="0.9"
+                                               TextWrapping="WrapWholeWords" />
+                                    <Button x:Name="OnlineUpdateButton"
+                                            Content="子機をオンライン更新"
+                                            Click="OnOnlineUpdateClick"
+                                            HorizontalAlignment="Left" />
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
                 </Border>
-                </StackPanel>
             </Grid>
 
             <StackPanel Grid.Row="2" Spacing="8" Margin="0,10,0,0">
-                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1"
-                        CornerRadius="8"
-                        Padding="12">
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="アプリ更新" FontWeight="SemiBold" />
-                        <TextBlock x:Name="UpdateStatusText"
-                                   Text="未確認"
-                                   FontSize="12"
-                                   Opacity="0.9"
-                                   TextWrapping="WrapWholeWords" />
-                        <Button x:Name="OnlineUpdateButton"
-                                Content="子機をオンライン更新"
-                                Click="OnOnlineUpdateClick"
-                                HorizontalAlignment="Left" />
-                    </StackPanel>
-                </Border>
                 <InfoBar x:Name="ErrorBar" IsOpen="False" Severity="Error" />
                 <InfoBar x:Name="ConnectionStatusBar"
                          IsOpen="False"
@@ -276,7 +322,7 @@
                     </Grid.ColumnDefinitions>
                     <Button x:Name="ServerToggleButton"
                             Grid.Column="0"
-                            Content="サーバー ON"
+                            Content="サーバーへ接続"
                             Click="OnServerToggleClick"
                             HorizontalAlignment="Stretch"
                             Style="{ThemeResource AccentButtonStyle}" />

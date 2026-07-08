@@ -5,7 +5,7 @@ using KakiMoni.Core.Paths;
 public sealed class OverlayFileService
 {
     private static readonly string[] SupportedExtensions =
-        [".png", ".jpg", ".jpeg", ".webp", ".gif", ".tif", ".tiff"];
+        [".tif", ".tiff", ".png", ".jpg", ".jpeg", ".webp", ".gif"];
 
     private readonly string _overlaysDir;
 
@@ -33,7 +33,7 @@ public sealed class OverlayFileService
         var folder = kind.Equals("correct", StringComparison.OrdinalIgnoreCase) ? "correct" : "incorrect";
         var preferredBase = kind.Equals("correct", StringComparison.OrdinalIgnoreCase) ? "aka_fill" : "ao_fill";
         return FindOverlayFile(folder, preferredBase)
-               ?? $"/overlays/{folder}/{preferredBase}.png";
+               ?? $"/overlays/{folder}/{preferredBase}.tiff";
     }
 
     private string? FindOverlayFile(string folder, string preferredBase)

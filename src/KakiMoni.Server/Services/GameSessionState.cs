@@ -1,5 +1,7 @@
 namespace KakiMoni.Server.Services;
 
+using KakiMoni.Core.Models;
+
 public sealed class GameSessionState
 {
     public string? CurrentChoiceUrl { get; set; }
@@ -12,4 +14,7 @@ public sealed class GameSessionState
 
     /// <summary>assets/seat-names.txt から席名を読み込む。</summary>
     public bool UseSeatNameFile { get; set; }
+
+    /// <summary>キャンバス上の席名オーバーレイ表示スタイル。</summary>
+    public SeatNameOverlayConfig SeatNameOverlay { get; set; } = new();
 }

@@ -164,6 +164,13 @@ public sealed class HostHubService : IAsyncDisposable
     public Task HostSetUseSeatNameFileAsync(bool enabled) =>
         InvokeWhenConnected("HostSetUseSeatNameFile", enabled);
 
+    public Task HostSetSeatNameOverlayAsync(SeatNameOverlayConfig config)
+    {
+        if (_connection is null || _connection.State != HubConnectionState.Connected)
+            return Task.CompletedTask;
+        return _connection.InvokeAsync("HostSetSeatNameOverlay", config);
+    }
+
     private Task InvokeWhenConnected(string method, bool arg)
     {
         if (_connection is null || _connection.State != HubConnectionState.Connected)

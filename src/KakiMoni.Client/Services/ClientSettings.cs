@@ -6,6 +6,9 @@ public sealed class ClientSettings
     public const string StartupPenColor = "#000000";
 
     public string? ServerUrl { get; set; }
+
+    /// <summary>ランチャーで選べる保存済みサーバー URL（新しい順）。</summary>
+    public List<string> SavedServerUrls { get; set; } = [];
     public int SeatId { get; set; } = 1;
     public string? BgImageUrl { get; set; }
     public string PenColor { get; set; } = DefaultPalette[0];
@@ -33,4 +36,7 @@ public sealed class ClientSettings
 
     /// <summary>書き画面に消しゴムツールを表示する。</summary>
     public bool ShowEraserTool { get; set; } = true;
+
+    /// <summary>消しゴム使用後、ペンに自動で戻るまでの秒数。</summary>
+    public int EraserAutoPenSeconds { get; set; } = 5;
 }

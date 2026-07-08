@@ -1,5 +1,6 @@
 using KakiMoni_Client.Services;
 using KakiMoni.Core.Drawing;
+using KakiMoni.Core.Models;
 using Microsoft.UI;
 using Microsoft.UI.Xaml.Media;
 using Windows.UI;
@@ -26,6 +27,9 @@ public static class AppState
     public static bool ShowConfirmButton { get; set; } = true;
     public static bool ShowClearButton { get; set; } = true;
     public static bool ShowEraserTool { get; set; } = true;
+    public static int EraserAutoPenSeconds { get; set; } = 5;
+
+  public static SeatNameOverlayConfig SeatNameOverlay { get; set; } = new();
 
     /// <summary>コンパネ設定: fill 判定表示中に描画色を反転する。</summary>
     public static bool JudgeColorMode { get; set; }
@@ -52,6 +56,7 @@ public static class AppState
         ShowConfirmButton = settings.ShowConfirmButton;
         ShowClearButton = settings.ShowClearButton;
         ShowEraserTool = settings.ShowEraserTool;
+        EraserAutoPenSeconds = settings.EraserAutoPenSeconds;
         ResetPenToPaletteStart();
     }
 
@@ -87,7 +92,8 @@ public static class AppState
         ExternalFullscreen = ExternalFullscreen,
         ShowConfirmButton = ShowConfirmButton,
         ShowClearButton = ShowClearButton,
-        ShowEraserTool = ShowEraserTool
+        ShowEraserTool = ShowEraserTool,
+        EraserAutoPenSeconds = EraserAutoPenSeconds
     };
 
     public static Color PenColorUi() => ParseColor(PenColor);

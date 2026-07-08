@@ -119,4 +119,13 @@ public sealed partial class LayoutDisplayWindow : Window
             CellsCanvas.Children.Add(view);
         }
     }
+
+    public void RefreshSeatNameOverlays()
+    {
+        foreach (var child in CellsCanvas.Children)
+        {
+            if (child is LayoutDisplayCellView cell)
+                cell.RefreshUi();
+        }
+    }
 }

@@ -9,15 +9,14 @@
     Background="{ThemeResource LayerOnAcrylicFillColorDefaultBrush}">
 
     <Grid>
-        <Grid Padding="12,8,12,10" RowSpacing="8" MaxWidth="1000">
+        <Grid Padding="16,12,16,12">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <StackPanel Grid.Row="0" Spacing="2">
+            <StackPanel Grid.Row="0" Spacing="2" Margin="0,0,0,8">
                 <TextBlock Text="KakiMoni レイアウト専用機"
                            Style="{ThemeResource SubtitleTextBlockStyle}" />
                 <TextBlock Text="サーバー接続・外部出力（最大3）・レイアウト編集"
@@ -26,23 +25,12 @@
                 <TextBlock x:Name="VersionText"
                            Style="{ThemeResource CaptionTextBlockStyle}"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
-                    <Button x:Name="OnlineUpdateButton"
-                            Content="レイアウトをオンライン更新"
-                            Click="OnOnlineUpdateClick" />
-                    <TextBlock x:Name="UpdateStatusText"
-                               VerticalAlignment="Center"
-                               Style="{ThemeResource CaptionTextBlockStyle}"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                               Text="未確認"
-                               TextWrapping="WrapWholeWords" />
-                </StackPanel>
             </StackPanel>
 
-            <Grid Grid.Row="1" ColumnSpacing="8">
+            <Grid Grid.Row="1" ColumnSpacing="12">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="220" />
+                    <ColumnDefinition Width="*" MinWidth="400" />
                 </Grid.ColumnDefinitions>
 
                 <Border Grid.Column="0"
@@ -50,21 +38,23 @@
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
-                        Padding="10,8">
-                    <StackPanel Spacing="6">
-                        <TextBlock Text="接続"
-                                   Style="{ThemeResource BodyStrongTextBlockStyle}" />
-                        <TextBox x:Name="ServerUrlBox"
-                                 Header="サーバー URL"
-                                 PlaceholderText="http://192.168.x.x:3000"
-                                 Text="http://localhost:3000"
-                                 LostFocus="OnServerUrlLostFocus" />
-                        <Button x:Name="ConnectButton"
-                                Content="接続"
-                                Click="OnConnectClick"
-                                HorizontalAlignment="Left"
-                                Style="{ThemeResource AccentButtonStyle}" />
-                    </StackPanel>
+                        Padding="4">
+                    <ListView x:Name="NavList"
+                              SelectionMode="Single"
+                              IsItemClickEnabled="True"
+                              SelectionChanged="OnNavSelectionChanged">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="12,10" />
+                                <Setter Property="CornerRadius" Value="6" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListViewItem Content="接続" Tag="connection" />
+                        <ListViewItem Content="外部出力" Tag="output" />
+                        <ListViewItem Content="レイアウト" Tag="layout" />
+                        <ListViewItem Content="更新" Tag="update" />
+                    </ListView>
                 </Border>
 
                 <Border Grid.Column="1"
@@ -72,151 +62,175 @@
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
-                        Padding="10,8">
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="状態"
-                                   Style="{ThemeResource BodyStrongTextBlockStyle}" />
-                        <InfoBar x:Name="StatusInfoBar"
-                                 IsOpen="True"
-                                 IsClosable="False"
-                                 Severity="Informational"
-                                 Title="未接続"
-                                 Message="親機のサーバー URL を入力して接続してください。" />
-                    </StackPanel>
+                        Padding="16">
+                    <Grid RowSpacing="8">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <TextBlock x:Name="DetailTitleText"
+                                   FontSize="18"
+                                   FontWeight="SemiBold" />
+                        <ScrollViewer Grid.Row="1"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel Spacing="0">
+                                <!-- 接続 -->
+                                <StackPanel x:Name="ConnectionSection" Spacing="8">
+                                    <TextBox x:Name="ServerUrlBox"
+                                             Header="サーバー URL"
+                                             PlaceholderText="http://192.168.x.x:3000"
+                                             Text="http://localhost:3000"
+                                             LostFocus="OnServerUrlLostFocus" />
+                                    <InfoBar x:Name="StatusInfoBar"
+                                             IsOpen="True"
+                                             IsClosable="False"
+                                             Severity="Informational"
+                                             Title="未接続"
+                                             Message="親機のサーバー URL を入力して接続してください。" />
+                                </StackPanel>
+
+                                <!-- 外部出力 -->
+                                <StackPanel x:Name="OutputSection"
+                                            Spacing="6"
+                                            Visibility="Collapsed">
+                                    <Border x:Name="Slot0Row"
+                                            Padding="6,4"
+                                            CornerRadius="6"
+                                            BorderThickness="2"
+                                            BorderBrush="Transparent"
+                                            Background="Transparent">
+                                        <Grid ColumnSpacing="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" MinWidth="200" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock x:Name="Slot0Label"
+                                                       Text="出力 1"
+                                                       VerticalAlignment="Center"
+                                                       MinWidth="52"
+                                                       FontWeight="SemiBold"
+                                                       Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                                            <ComboBox x:Name="Monitor0Box"
+                                                      Grid.Column="1"
+                                                      PlaceholderText="モニターを選択"
+                                                      HorizontalAlignment="Stretch" />
+                                            <Button x:Name="Slot0Button"
+                                                    Grid.Column="2"
+                                                    Content="開く"
+                                                    Click="OnSlot0Click"
+                                                    MinWidth="72" />
+                                        </Grid>
+                                    </Border>
+                                    <Border x:Name="Slot1Row"
+                                            Padding="6,4"
+                                            CornerRadius="6"
+                                            BorderThickness="2"
+                                            BorderBrush="Transparent"
+                                            Background="Transparent">
+                                        <Grid ColumnSpacing="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" MinWidth="200" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock x:Name="Slot1Label"
+                                                       Text="出力 2"
+                                                       VerticalAlignment="Center"
+                                                       MinWidth="52"
+                                                       FontWeight="SemiBold"
+                                                       Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                                            <ComboBox x:Name="Monitor1Box"
+                                                      Grid.Column="1"
+                                                      PlaceholderText="モニターを選択"
+                                                      HorizontalAlignment="Stretch" />
+                                            <Button x:Name="Slot1Button"
+                                                    Grid.Column="2"
+                                                    Content="開く"
+                                                    Click="OnSlot1Click"
+                                                    MinWidth="72" />
+                                        </Grid>
+                                    </Border>
+                                    <Border x:Name="Slot2Row"
+                                            Padding="6,4"
+                                            CornerRadius="6"
+                                            BorderThickness="2"
+                                            BorderBrush="Transparent"
+                                            Background="Transparent">
+                                        <Grid ColumnSpacing="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" MinWidth="200" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock x:Name="Slot2Label"
+                                                       Text="出力 3"
+                                                       VerticalAlignment="Center"
+                                                       MinWidth="52"
+                                                       FontWeight="SemiBold"
+                                                       Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                                            <ComboBox x:Name="Monitor2Box"
+                                                      Grid.Column="1"
+                                                      PlaceholderText="モニターを選択"
+                                                      HorizontalAlignment="Stretch" />
+                                            <Button x:Name="Slot2Button"
+                                                    Grid.Column="2"
+                                                    Content="開く"
+                                                    Click="OnSlot2Click"
+                                                    MinWidth="72" />
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- レイアウト -->
+                                <StackPanel x:Name="LayoutSection"
+                                            Spacing="8"
+                                            Visibility="Collapsed">
+                                    <ComboBox x:Name="EditSlotBox"
+                                              Header="レイアウト編集"
+                                              HorizontalAlignment="Stretch"
+                                              SelectedIndex="0">
+                                        <ComboBoxItem Content="出力 1（slot1）" Tag="slot1" />
+                                        <ComboBoxItem Content="出力 2（slot2）" Tag="slot2" />
+                                        <ComboBoxItem Content="出力 3（slot3）" Tag="slot3" />
+                                    </ComboBox>
+                                    <Button Content="編集を開く"
+                                            Click="OnOpenLayoutEditorClick"
+                                            HorizontalAlignment="Left"
+                                            MinWidth="100" />
+                                </StackPanel>
+
+                                <!-- 更新 -->
+                                <StackPanel x:Name="UpdateSection"
+                                            Spacing="8"
+                                            Visibility="Collapsed">
+                                    <TextBlock x:Name="UpdateStatusText"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               Text="未確認"
+                                               TextWrapping="WrapWholeWords" />
+                                    <Button x:Name="OnlineUpdateButton"
+                                            Content="レイアウトをオンライン更新"
+                                            Click="OnOnlineUpdateClick"
+                                            HorizontalAlignment="Left" />
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
                 </Border>
             </Grid>
 
-            <Border Grid.Row="2"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8"
-                    Padding="10,8">
-                <StackPanel Spacing="6">
-                    <TextBlock Text="外部出力"
-                               Style="{ThemeResource BodyStrongTextBlockStyle}" />
-
-                    <Border x:Name="Slot0Row"
-                            Padding="6,4"
-                            CornerRadius="6"
-                            BorderThickness="2"
-                            BorderBrush="Transparent"
-                            Background="Transparent">
-                        <Grid ColumnSpacing="8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" MinWidth="200" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="Slot0Label"
-                                       Text="出力 1"
-                                       VerticalAlignment="Center"
-                                       MinWidth="52"
-                                       FontWeight="SemiBold"
-                                       Style="{ThemeResource BodyStrongTextBlockStyle}" />
-                            <ComboBox x:Name="Monitor0Box"
-                                      Grid.Column="1"
-                                      PlaceholderText="モニターを選択"
-                                      HorizontalAlignment="Stretch" />
-                            <Button x:Name="Slot0Button"
-                                    Grid.Column="2"
-                                    Content="開く"
-                                    Click="OnSlot0Click"
-                                    MinWidth="72" />
-                        </Grid>
-                    </Border>
-
-                    <Border x:Name="Slot1Row"
-                            Padding="6,4"
-                            CornerRadius="6"
-                            BorderThickness="2"
-                            BorderBrush="Transparent"
-                            Background="Transparent">
-                        <Grid ColumnSpacing="8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" MinWidth="200" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="Slot1Label"
-                                       Text="出力 2"
-                                       VerticalAlignment="Center"
-                                       MinWidth="52"
-                                       FontWeight="SemiBold"
-                                       Style="{ThemeResource BodyStrongTextBlockStyle}" />
-                            <ComboBox x:Name="Monitor1Box"
-                                      Grid.Column="1"
-                                      PlaceholderText="モニターを選択"
-                                      HorizontalAlignment="Stretch" />
-                            <Button x:Name="Slot1Button"
-                                    Grid.Column="2"
-                                    Content="開く"
-                                    Click="OnSlot1Click"
-                                    MinWidth="72" />
-                        </Grid>
-                    </Border>
-
-                    <Border x:Name="Slot2Row"
-                            Padding="6,4"
-                            CornerRadius="6"
-                            BorderThickness="2"
-                            BorderBrush="Transparent"
-                            Background="Transparent">
-                        <Grid ColumnSpacing="8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" MinWidth="200" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="Slot2Label"
-                                       Text="出力 3"
-                                       VerticalAlignment="Center"
-                                       MinWidth="52"
-                                       FontWeight="SemiBold"
-                                       Style="{ThemeResource BodyStrongTextBlockStyle}" />
-                            <ComboBox x:Name="Monitor2Box"
-                                      Grid.Column="1"
-                                      PlaceholderText="モニターを選択"
-                                      HorizontalAlignment="Stretch" />
-                            <Button x:Name="Slot2Button"
-                                    Grid.Column="2"
-                                    Content="開く"
-                                    Click="OnSlot2Click"
-                                    MinWidth="72" />
-                        </Grid>
-                    </Border>
-
-                    <Border Height="1"
-                            Margin="0,2"
-                            Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
-
-                    <Grid ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" MinWidth="200" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <ComboBox x:Name="EditSlotBox"
-                                  Header="レイアウト編集"
-                                  HorizontalAlignment="Stretch"
-                                  SelectedIndex="0">
-                            <ComboBoxItem Content="出力 1（slot1）" Tag="slot1" />
-                            <ComboBoxItem Content="出力 2（slot2）" Tag="slot2" />
-                            <ComboBoxItem Content="出力 3（slot3）" Tag="slot3" />
-                        </ComboBox>
-                        <Button Grid.Column="1"
-                                Content="編集を開く"
-                                Click="OnOpenLayoutEditorClick"
-                                VerticalAlignment="Bottom"
-                                MinWidth="100" />
-                    </Grid>
-                </StackPanel>
-            </Border>
-
-            <InfoBar Grid.Row="3"
-                     x:Name="ErrorBar"
-                     IsOpen="False"
-                     Severity="Error"
-                     Margin="0,0,0,0" />
+            <StackPanel Grid.Row="2" Spacing="8" Margin="0,10,0,0">
+                <InfoBar x:Name="ErrorBar"
+                         IsOpen="False"
+                         Severity="Error" />
+                <Button x:Name="ConnectButton"
+                        Content="接続"
+                        Click="OnConnectClick"
+                        HorizontalAlignment="Stretch"
+                        Style="{ThemeResource AccentButtonStyle}" />
+            </StackPanel>
         </Grid>
 
         <Grid x:Name="ConnectOverlay"

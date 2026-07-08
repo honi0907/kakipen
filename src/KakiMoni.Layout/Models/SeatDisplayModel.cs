@@ -82,6 +82,8 @@ public sealed class SeatDisplayModel : INotifyPropertyChanged
     public string DisplayName =>
         string.IsNullOrWhiteSpace(_seatName) ? $"ID {SeatId}" : _seatName;
 
+    public string RawSeatName => _seatName;
+
     public string? ChoiceImageUrl
     {
         get => _choiceImageUrl;
@@ -118,6 +120,7 @@ public sealed class SeatDisplayModel : INotifyPropertyChanged
         OverlayImageUrl = string.IsNullOrWhiteSpace(seat.OverlayImageUrl) ? null : seat.OverlayImageUrl;
         _seatName = seat.Name ?? string.Empty;
         OnPropertyChanged(nameof(DisplayName));
+        OnPropertyChanged(nameof(RawSeatName));
 
         if (!IsConnected)
         {

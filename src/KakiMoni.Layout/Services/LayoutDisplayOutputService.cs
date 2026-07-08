@@ -108,6 +108,15 @@ public sealed class LayoutDisplayOutputService
         await tcs.Task;
     }
 
+    public void RefreshSeatNameOverlays()
+    {
+        _uiQueue?.TryEnqueue(() =>
+        {
+            for (var i = 0; i < 3; i++)
+                _windows[i]?.RefreshSeatNameOverlays();
+        });
+    }
+
     private static int SlotToIndex(string slot) => slot switch
     {
         LayoutDisplaySlots.Slot1 => 0,

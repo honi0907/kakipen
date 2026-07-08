@@ -49,6 +49,10 @@
     <ProjectReference Include="..\KakiMoni.Core\KakiMoni.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\KakiMoni.WinUi.Shared\SeatNameOverlayTextHost.cs" Link="Shared\SeatNameOverlayTextHost.cs" />
+  </ItemGroup>
+
   <PropertyGroup>
     <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
     <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>

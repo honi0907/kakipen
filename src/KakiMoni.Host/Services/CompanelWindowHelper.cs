@@ -6,8 +6,8 @@ namespace KakiMoni_Host.Services;
 
 public static class CompanelWindowHelper
 {
-    private const int LauncherWidth = 920;
-    private const int LauncherHeight = 600;
+    private const int LauncherWidth = 1000;
+    private const int LauncherHeight = 680;
 
     private static SizeInt32? _savedWindowedSize;
     private static PointInt32? _savedWindowedPosition;
