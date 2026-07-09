@@ -51,7 +51,9 @@ public sealed partial class LayoutDisplayWindow : Window
     public void BindSeats(IReadOnlyDictionary<int, SeatDisplayModel> seats)
     {
         _seats = seats;
-        RebuildCells();
+        // 席モデルは常に同一インスタンス。セル未構築のときだけ生成する。
+        if (CellsCanvas.Children.Count == 0)
+            RebuildCells();
     }
 
     public void ApplyLayout(HostDisplayLayout? layout)

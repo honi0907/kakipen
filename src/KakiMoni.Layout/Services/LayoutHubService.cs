@@ -2,6 +2,7 @@ using KakiMoni.Core.Models;
 using KakiMoni.Core.Protocol;
 using KakiMoni_Layout.Models;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.UI.Dispatching;
 
 namespace KakiMoni_Layout.Services;
 
@@ -9,11 +10,14 @@ public sealed class LayoutHubService : IAsyncDisposable
 {
     private HubConnection? _connection;
     private string? _baseUrl;
+    private DispatcherQueue? _uiQueue;
 
     public bool IsConnected => _connection?.State == HubConnectionState.Connected;
 
     public event Action<bool, bool>? ConnectionChanged;
     public event Action<string, HostDisplayLayout>? DisplayLayoutChanged;
+
+    public void SetUiQueue(DispatcherQueue uiQueue) => _uiQueue = uiQueue;
 
     public async Task ConnectAsync(string baseUrl, CancellationToken cancellationToken = default)
     {
@@ -64,42 +68,74 @@ public sealed class LayoutHubService : IAsyncDisposable
         var seats = AppLayoutContext.Seats;
 
         _connection.On<IReadOnlyList<SeatClientState>>(HostCallbacks.FullState, list =>
-            seats.ApplyFullState(list));
+            OnUi(() => seats.ApplyFullState(list)));
 
-        _connection.On<int, StrokeData>(HostCallbacks.StrokeStart, seats.BeginStroke);
-        _connection.On<int, StrokePoint>(HostCallbacks.StrokePoint, seats.AddPoint);
-        _connection.On<int>(HostCallbacks.StrokeEnd, seats.EndStroke);
-        _connection.On<int>(HostCallbacks.CanvasCleared, seats.ClearStrokes);
-        _connection.On<int>(HostCallbacks.SeatLocked, seats.LockSeat);
-        _connection.On<int>(HostCallbacks.SeatUnlocked, seats.UnlockSeat);
-        _connection.On(HostCallbacks.AllLocked, seats.LockAll);
-        _connection.On(HostCallbacks.AllUnlocked, seats.UnlockAll);
-        _connection.On<int>(HostCallbacks.ClientDisconnected, seats.DisconnectSeat);
-        _connection.On<int>(HostCallbacks.ClientRegistered, id => seats.MarkConnected(id));
+        _connection.On<int, StrokeData>(HostCallbacks.StrokeStart, (id, stroke) =>
+            OnUi(() => seats.BeginStroke(id, stroke)));
+        _connection.On<int, StrokePoint>(HostCallbacks.StrokePoint, (id, point) =>
+            OnUi(() => seats.AddPoint(id, point)));
+        _connection.On<int>(HostCallbacks.StrokeEnd, id =>
+            OnUi(() => seats.EndStroke(id)));
+        _connection.On<int>(HostCallbacks.CanvasCleared, id =>
+            OnUi(() => seats.ClearStrokes(id)));
+        _connection.On<int>(HostCallbacks.SeatLocked, id =>
+            OnUi(() => seats.LockSeat(id)));
+        _connection.On<int>(HostCallbacks.SeatUnlocked, id =>
+            OnUi(() => seats.UnlockSeat(id)));
+        _connection.On(HostCallbacks.AllLocked, () =>
+            OnUi(seats.LockAll));
+        _connection.On(HostCallbacks.AllUnlocked, () =>
+            OnUi(seats.UnlockAll));
+        _connection.On<int>(HostCallbacks.ClientDisconnected, id =>
+            OnUi(() => seats.DisconnectSeat(id)));
+        _connection.On<int>(HostCallbacks.ClientRegistered, id =>
+            OnUi(() => seats.MarkConnected(id)));
 
         _connection.On<string>(HostCallbacks.ChoiceChanged, url =>
-            seats.SetChoice(url));
+            OnUi(() => seats.SetChoice(url)));
 
-        _connection.On<int, string>(HostCallbacks.SeatRevealed, (id, _) => seats.SetRevealed(id, true));
-        _connection.On<int>(HostCallbacks.SeatHidden, id => seats.SetRevealed(id, false));
-        _connection.On<int, string>(HostCallbacks.JudgeResult, seats.SetOverlay);
-        _connection.On<int, bool>(HostCallbacks.SeatWritingBlackout, seats.SetWritingBlackout);
+        _connection.On<int, string>(HostCallbacks.SeatRevealed, (id, _) =>
+            OnUi(() => seats.SetRevealed(id, true)));
+        _connection.On<int>(HostCallbacks.SeatHidden, id =>
+            OnUi(() => seats.SetRevealed(id, false)));
+        _connection.On<int, string>(HostCallbacks.JudgeResult, (id, url) =>
+            OnUi(() => seats.SetOverlay(id, url)));
+        _connection.On<int, bool>(HostCallbacks.SeatWritingBlackout, (id, enabled) =>
+            OnUi(() => seats.SetWritingBlackout(id, enabled)));
 
         _connection.On<SeatNameOverlayConfig>(ClientCallbacks.SeatNameOverlay, config =>
         {
-            var normalized = config ?? new SeatNameOverlayConfig();
-            normalized.Normalize();
-            AppLayoutContext.SeatNameOverlay = normalized;
-            AppLayoutContext.DisplayOutput.RefreshSeatNameOverlays();
+            OnUi(() =>
+            {
+                var normalized = config ?? new SeatNameOverlayConfig();
+                normalized.Normalize();
+                AppLayoutContext.SeatNameOverlay = normalized;
+                AppLayoutContext.DisplayOutput.RefreshSeatNameOverlays();
+            });
         });
 
         _connection.On<string, HostDisplayLayout>(LayoutCallbacks.DisplayLayoutChanged, (group, layout) =>
         {
-            AppLayoutContext.SetSlotLayout(group, layout);
-            LayoutDisplayLayoutStore.SaveForSlot(group, layout);
-            DisplayLayoutChanged?.Invoke(group, layout);
-            AppLayoutContext.DisplayOutput.ApplyLayout(group, layout);
+            OnUi(() =>
+            {
+                AppLayoutContext.SetSlotLayout(group, layout);
+                LayoutDisplayLayoutStore.SaveForSlot(group, layout);
+                DisplayLayoutChanged?.Invoke(group, layout);
+                AppLayoutContext.DisplayOutput.ApplyLayout(group, layout);
+            });
         });
+    }
+
+    private void OnUi(Action action)
+    {
+        var queue = _uiQueue;
+        if (queue is null || queue.HasThreadAccess)
+        {
+            action();
+            return;
+        }
+
+        queue.TryEnqueue(() => action());
     }
 
     public Task PushDisplayLayoutAsync(string group, HostDisplayLayout layout)

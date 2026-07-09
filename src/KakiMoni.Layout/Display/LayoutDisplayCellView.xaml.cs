@@ -1,9 +1,10 @@
-﻿using KakiMoni.Core.Display;
+using KakiMoni.Core.Display;
 using KakiMoni.Core.Models;
 using KakiMoni_Layout.Controls;
 using KakiMoni_Layout.Models;
 using KakiMoni_Layout.Drawing;
 using KakiMoni_Layout.Services;
+using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -22,7 +23,8 @@ public sealed partial class LayoutDisplayCellView : UserControl
     private CancellationTokenSource? _overlayCts;
     private int _bgDecodeWidth;
     private int _choiceDecodeWidth;
-    private int _overlayDecodeWidth;
+    private CanvasBitmap? _fillOverlayBitmap;
+    private CanvasBitmap? _judgeOverlayBitmap;
 
     public static readonly DependencyProperty ModelProperty =
         DependencyProperty.Register(nameof(Model), typeof(SeatDisplayModel), typeof(LayoutDisplayCellView),
@@ -62,6 +64,7 @@ public sealed partial class LayoutDisplayCellView : UserControl
             _canvasReady = false;
             _bgCts?.Cancel();
             _overlayCts?.Cancel();
+            ClearJudgeOverlayBitmaps();
         };
     }
 
@@ -156,12 +159,15 @@ public sealed partial class LayoutDisplayCellView : UserControl
             return;
 
         var target = GetDecodeWidth();
-        if (target <= _bgDecodeWidth && target <= _choiceDecodeWidth && target <= _overlayDecodeWidth)
+        if (target <= _bgDecodeWidth && target <= _choiceDecodeWidth)
+        {
+            if (_fillOverlayBitmap is not null || _judgeOverlayBitmap is not null)
+                RequestPreviewRefresh();
             return;
+        }
 
         _ = UpdateBackgroundAsync();
         _ = UpdateChoiceOverlayAsync();
-        _ = UpdateJudgeOverlayAsync();
     }
 
     private async Task UpdateBackgroundAsync()
@@ -217,72 +223,58 @@ public sealed partial class LayoutDisplayCellView : UserControl
         ChoiceOverlayImage.Visibility = thumb is null ? Visibility.Collapsed : Visibility.Visible;
     }
 
+    private void ClearJudgeOverlayBitmaps()
+    {
+        _fillOverlayBitmap?.Dispose();
+        _judgeOverlayBitmap?.Dispose();
+        _fillOverlayBitmap = null;
+        _judgeOverlayBitmap = null;
+        _loadedOverlayUrl = null;
+        FillJudgeOverlayImage.Source = null;
+        FillJudgeOverlayImage.Visibility = Visibility.Collapsed;
+        JudgeOverlayImage.Source = null;
+        JudgeOverlayImage.Visibility = Visibility.Collapsed;
+    }
+
     private async Task UpdateJudgeOverlayAsync()
     {
         var url = Model?.OverlayImageUrl;
         if (string.IsNullOrWhiteSpace(url))
         {
-            _loadedOverlayUrl = null;
-            _overlayDecodeWidth = 0;
             _overlayCts?.Cancel();
-            FillJudgeOverlayImage.Source = null;
-            FillJudgeOverlayImage.Visibility = Visibility.Collapsed;
-            JudgeOverlayImage.Source = null;
-            JudgeOverlayImage.Visibility = Visibility.Collapsed;
+            ClearJudgeOverlayBitmaps();
+            RequestPreviewRefresh();
             return;
         }
 
-        var decodeWidth = GetDecodeWidth();
         if (string.Equals(_loadedOverlayUrl, url, StringComparison.OrdinalIgnoreCase)
-            && (FillJudgeOverlayImage.Source is not null || JudgeOverlayImage.Source is not null)
-            && _overlayDecodeWidth >= decodeWidth)
+            && (_fillOverlayBitmap is not null || _judgeOverlayBitmap is not null))
             return;
 
         _overlayCts?.Cancel();
         _overlayCts = new CancellationTokenSource();
         var token = _overlayCts.Token;
 
-        if (SeatPreviewRenderer.IsFillOverlayUrl(url))
+        var bitmap = await _images.LoadCanvasBitmapAsync(url, token);
+        if (token.IsCancellationRequested || Model?.OverlayImageUrl != url)
         {
-            var thumb = await _images.LoadThumbnailAsync(url, decodeWidth);
-            if (token.IsCancellationRequested || Model?.OverlayImageUrl != url) return;
+            bitmap?.Dispose();
+            return;
+        }
 
-            _loadedOverlayUrl = url;
-            _overlayDecodeWidth = decodeWidth;
-            JudgeOverlayImage.Source = null;
-            JudgeOverlayImage.Visibility = Visibility.Collapsed;
-            if (thumb is null)
-            {
-                FillJudgeOverlayImage.Source = null;
-                FillJudgeOverlayImage.Visibility = Visibility.Collapsed;
-            }
-            else
-            {
-                FillJudgeOverlayImage.Source = thumb;
-                FillJudgeOverlayImage.Visibility = Visibility.Visible;
-            }
+        ClearJudgeOverlayBitmaps();
+        _loadedOverlayUrl = url;
 
+        if (bitmap is null)
+        {
             RequestPreviewRefresh();
             return;
         }
 
-        var judgeThumb = await _images.LoadThumbnailAsync(url, decodeWidth);
-        if (token.IsCancellationRequested || Model?.OverlayImageUrl != url) return;
-
-        _loadedOverlayUrl = url;
-        _overlayDecodeWidth = decodeWidth;
-        FillJudgeOverlayImage.Source = null;
-        FillJudgeOverlayImage.Visibility = Visibility.Collapsed;
-        if (judgeThumb is null)
-        {
-            JudgeOverlayImage.Source = null;
-            JudgeOverlayImage.Visibility = Visibility.Collapsed;
-        }
+        if (SeatPreviewRenderer.IsFillOverlayUrl(url))
+            _fillOverlayBitmap = bitmap;
         else
-        {
-            JudgeOverlayImage.Source = judgeThumb;
-            JudgeOverlayImage.Visibility = Visibility.Visible;
-        }
+            _judgeOverlayBitmap = bitmap;
 
         RequestPreviewRefresh();
     }
@@ -292,7 +284,53 @@ public sealed partial class LayoutDisplayCellView : UserControl
         var w = (float)sender.ActualWidth;
         var h = (float)sender.ActualHeight;
         args.DrawingSession.Clear(Microsoft.UI.Colors.Transparent);
-        if (Model is null) return;
+        if (Model is null || w <= 1 || h <= 1)
+            return;
+
+        if (_fillOverlayBitmap is not null)
+            DrawCanvasImageUniformToFill(args.DrawingSession, _fillOverlayBitmap, w, h);
+
         SeatPreviewRenderer.DrawStrokes(args.DrawingSession, Model, w, h);
+
+        if (_judgeOverlayBitmap is not null)
+            DrawCanvasImageUniform(args.DrawingSession, _judgeOverlayBitmap, w, h);
+    }
+
+    private static void DrawCanvasImageUniformToFill(
+        CanvasDrawingSession session,
+        CanvasBitmap bitmap,
+        float canvasW,
+        float canvasH)
+    {
+        var iw = bitmap.SizeInPixels.Width;
+        var ih = bitmap.SizeInPixels.Height;
+        if (iw <= 0 || ih <= 0)
+            return;
+
+        var scale = Math.Max(canvasW / iw, canvasH / ih);
+        var dw = iw * scale;
+        var dh = ih * scale;
+        var x = (canvasW - dw) * 0.5f;
+        var y = (canvasH - dh) * 0.5f;
+        session.DrawImage(bitmap, new Windows.Foundation.Rect(x, y, dw, dh));
+    }
+
+    private static void DrawCanvasImageUniform(
+        CanvasDrawingSession session,
+        CanvasBitmap bitmap,
+        float canvasW,
+        float canvasH)
+    {
+        var iw = bitmap.SizeInPixels.Width;
+        var ih = bitmap.SizeInPixels.Height;
+        if (iw <= 0 || ih <= 0)
+            return;
+
+        var scale = Math.Min(canvasW / iw, canvasH / ih);
+        var dw = iw * scale;
+        var dh = ih * scale;
+        var x = (canvasW - dw) * 0.5f;
+        var y = (canvasH - dh) * 0.5f;
+        session.DrawImage(bitmap, new Windows.Foundation.Rect(x, y, dw, dh));
     }
 }

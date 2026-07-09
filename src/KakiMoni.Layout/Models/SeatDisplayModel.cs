@@ -87,19 +87,37 @@ public sealed class SeatDisplayModel : INotifyPropertyChanged
     public string? ChoiceImageUrl
     {
         get => _choiceImageUrl;
-        set { _choiceImageUrl = value; OnPropertyChanged(); }
+        set
+        {
+            if (string.Equals(_choiceImageUrl, value, StringComparison.Ordinal))
+                return;
+            _choiceImageUrl = value;
+            OnPropertyChanged();
+        }
     }
 
     public string? BgImageUrl
     {
         get => _bgImageUrl;
-        set { _bgImageUrl = value; OnPropertyChanged(); }
+        set
+        {
+            if (string.Equals(_bgImageUrl, value, StringComparison.Ordinal))
+                return;
+            _bgImageUrl = value;
+            OnPropertyChanged();
+        }
     }
 
     public string? OverlayImageUrl
     {
         get => _overlayImageUrl;
-        set { _overlayImageUrl = value; OnPropertyChanged(); }
+        set
+        {
+            if (string.Equals(_overlayImageUrl, value, StringComparison.Ordinal))
+                return;
+            _overlayImageUrl = value;
+            OnPropertyChanged();
+        }
     }
 
     public IReadOnlyList<StrokeData> Strokes => _strokes;

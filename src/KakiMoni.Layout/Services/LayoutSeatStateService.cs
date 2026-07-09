@@ -17,20 +17,13 @@ public sealed class LayoutSeatStateService
 
     public void ApplyFullState(IReadOnlyList<SeatClientState> states)
     {
+        // 親機と同様、既存セルが購読している同一モデルを更新するだけにする。
+        // ここで BindSeats→RebuildCells すると描画クリアや判定画像のタイミングが壊れる。
         foreach (var seat in states)
         {
             if (_seats.TryGetValue(seat.SeatId, out var model))
-            {
                 model.ApplyState(seat);
-                if (!string.IsNullOrWhiteSpace(AppLayoutContext.ServerBaseUrl)
-                    && !string.IsNullOrWhiteSpace(AppLayoutContext.Hub.IsConnected ? AppLayoutContext.ServerBaseUrl : null))
-                {
-                    // choice is global via ChoiceChanged
-                }
-            }
         }
-
-        AppLayoutContext.DisplayOutput.BindSeats(_seats);
     }
 
     public void BeginStroke(int seatId, StrokeData stroke)

@@ -239,6 +239,7 @@ public sealed partial class MainPage : Page
     {
         _settings.ServerUrl = url;
         LayoutLauncherSettingsStore.Save(_settings);
+        AppLayoutContext.Hub.SetUiQueue(DispatcherQueue);
         await AppLayoutContext.Hub.ConnectAsync(url, cancellationToken);
         AppLayoutContext.DisplayOutput.BindSeats(AppLayoutContext.Seats.All);
         return true;

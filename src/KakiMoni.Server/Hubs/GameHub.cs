@@ -311,6 +311,9 @@ public sealed class GameHub : Hub
         }
 
         await HostAndLayoutClients.SendAsync(HostCallbacks.ChoiceChanged, string.Empty);
+        // 親機・レイアウト専用機が FullState 前に描画を即クリアできるように送る
+        for (var seatId = 1; seatId <= 10; seatId++)
+            await HostAndLayoutClients.SendAsync(HostCallbacks.CanvasCleared, seatId);
         await HostAndLayoutClients.SendAsync(HostCallbacks.FullState, _seats.GetAllSeats());
     }
 
